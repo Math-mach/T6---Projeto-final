@@ -4,13 +4,13 @@
 
 <small>
 
-Este projeto foi desenvolvido para realizar um ciclo completo de análise de dados, desde a limpeza e preparação até a modelagem preditiva e avaliação de performance. O objetivo principal é transformar um conjunto de dados brutos de jogadores em insights acionáveis e modelos de *machine learning* robustos, capazes de prever três métricas-alvo distintas (`Target1`, `Target2` e `Target3`).
+Este projeto foi desenvolvido para realizar um ciclo completo de análise de dados, desde a limpeza e preparação até a modelagem preditiva e avaliação de performance. O objetivo principal é transformar um conjunto de dados brutos de jogadores em insights acionáveis e modelos de _machine learning_ robustos, capazes de prever três métricas-alvo distintas (`Target1`, `Target2` e `Target3`).
 
 O processo é dividido em duas fases principais:
 
-1.  **Fase de Limpeza e Preparação (V1)**: Focada em garantir a qualidade e a consistência dos dados. Nesta etapa, são aplicadas técnicas como tratamento de valores ausentes, remoção de *outliers*, *feature engineering* e seleção de variáveis para criar um *dataset* otimizado e confiável.
+1.  **Fase de Limpeza e Preparação (V1)**: Focada em garantir a qualidade e a consistência dos dados. Nesta etapa, são aplicadas técnicas como tratamento de valores ausentes, remoção de _outliers_, _feature engineering_ e seleção de variáveis para criar um _dataset_ otimizado e confiável.
 
-2.  **Fase de Modelagem (V2)**: Utiliza o *dataset* limpo para treinar, avaliar e comparar diversos algoritmos de regressão, como *Random Forest*, *XGBoost* e *LightGBM*. O objetivo é identificar os modelos com melhor desempenho para cada uma das variáveis-alvo, salvando-os para futura implementação em produção.
+2.  **Fase de Modelagem (V2)**: Utiliza o _dataset_ limpo para treinar, avaliar e comparar diversos algoritmos de regressão, como _Random Forest_, _XGBoost_ e _LightGBM_. O objetivo é identificar os modelos com melhor desempenho para cada uma das variáveis-alvo, salvando-os para futura implementação em produção.
 
 Ao final, o projeto entrega não apenas os modelos treinados, mas também análises visuais e relatórios que facilitam a interpretação dos resultados e a identificação das variáveis mais influentes.
 
@@ -33,35 +33,35 @@ Esta célula inicializa o ambiente de trabalho. Primeiro, realiza a instalação
 
 <small>
 
-- **xlsxwriter e openpyxl**: 
+- **xlsxwriter e openpyxl**:
 
 Dependências utilizadas pelo Pandas para ler e escrever arquivos no formato Excel (.xlsx). A instalação garante a compatibilidade com essas operações.
 
-- **scikit-learn**: 
+- **scikit-learn**:
 
 Uma das principais bibliotecas de aprendizado de máquina em Python, que fornece ferramentas eficientes para pré-processamento, modelagem e avaliação de dados.
 
-- **pandas**: 
+- **pandas**:
 
 Fundamental para a manipulação e análise de dados. É utilizada para carregar os dados em estruturas conhecidas como DataFrames, que facilitam a limpeza e a transformação.
 
-- **numpy**: 
+- **numpy**:
 
 Essencial para computação numérica, oferece suporte a arrays e matrizes multidimensionais, além de uma vasta coleção de funções matemáticas de alto desempenho.
 
-- **SimpleImputer**: 
+- **SimpleImputer**:
 
 Uma classe do Scikit-learn usada para tratar dados ausentes (NaN), permitindo preenchê-los com uma estratégia definida (como a média, mediana ou a moda da coluna).
 
-- **StandardScaler**: 
+- **StandardScaler**:
 
 Uma classe do Scikit-learn utilizada para padronizar as features numéricas, redimensionando-as para que tenham média zero e desvio padrão igual a um, o que é crucial para muitos algoritmos de machine learning.
 
-- **datetime**: 
+- **datetime**:
 
 Módulo padrão do Python para manipulação de datas e horas.
 
-- **warnings**: 
+- **warnings**:
 
 Módulo para controlar a exibição de mensagens de aviso. A linha warnings.filterwarnings('ignore') é usada para suprimir esses avisos e manter a saída do código mais limpa e focada nos resultados.
 </small>
@@ -95,18 +95,21 @@ COLUNAS_IGNORAR = [
 
 print(f"📋 Categóricas: {len(COLUNAS_CATEGORICAS)} | Targets: {len(COLUNAS_TARGETS)}")
 ```
+
 </details>
 <small> 📖 Explicação:
 
-Esta célula centraliza as **definições estruturais** do dataset, classificando as colunas em grupos conforme seu papel no processamento: 
-- **`COLUNAS_CATEGORICAS`**: lista de variáveis qualitativas ou de múltipla escolha, normalmente representadas por códigos (`P01`, `P02`, etc.). 
-- **`COLUNAS_TARGETS`**: define as variáveis-alvo (targets) utilizadas em análises ou modelagem. 
-- **`COLUNAS_IGNORAR`**: contém variáveis irrelevantes ou auxiliares, como identificadores, timestamps e campos descritivos. 
-</small>
+Esta célula centraliza as **definições estruturais** do dataset, classificando as colunas em grupos conforme seu papel no processamento:
+
+- **`COLUNAS_CATEGORICAS`**: lista de variáveis qualitativas ou de múltipla escolha, normalmente representadas por códigos (`P01`, `P02`, etc.).
+- **`COLUNAS_TARGETS`**: define as variáveis-alvo (targets) utilizadas em análises ou modelagem.
+- **`COLUNAS_IGNORAR`**: contém variáveis irrelevantes ou auxiliares, como identificadores, timestamps e campos descritivos.
+  </small>
 
 ---
 
 ### 🧩 **Célula 4 - Carregando Dataset Recebido**
+
 <details>
 
 <summary> Trecho do codigo em Python </summary>
@@ -118,14 +121,16 @@ df_original = pd.read_excel('JogadoresV1.xlsx')
 df = df_original.copy()
 print(f"Dados carregados: {df.shape[0]} linhas, {df.shape[1]} colunas")
 ```
+
 </details>
 <small>
 📖 Explicação:
 
-Nesta célula, realizamos a leitura do arquivo Excel contendo o dataset bruto e criamos uma cópia para preservar o original.  
-- `pd.read_excel()` carrega o arquivo no formato Excel.  
+Nesta célula, realizamos a leitura do arquivo Excel contendo o dataset bruto e criamos uma cópia para preservar o original.
+
+- `pd.read_excel()` carrega o arquivo no formato Excel.
 - `.copy()` evita modificações acidentais no dataset original.  
-</small>
+  </small>
 
 ---
 
@@ -141,6 +146,7 @@ if 'F0103' in df.columns and df['F0103'].dtype == 'object':
     df['F0103'] = df['F0103'].str.replace(',', '.').astype(float)
     print("   ✅ Convertido!")
 ```
+
 </details>
 
 <small> 📖 Explicação:
@@ -149,7 +155,7 @@ Nesta célula, corrigimos a coluna chamada `F0103` para garantir que os números
 
 - Primeiro verificamos se a coluna `F0103` existe na tabela e se ela está como texto.
 
-- Em seguida, substituímos todas as vírgulas `,` por pontos `.` — isso é importante porque em alguns arquivos, números decimais vêm escritos como `3,14` em vez de `3.14`. 
+- Em seguida, substituímos todas as vírgulas `,` por pontos `.` — isso é importante porque em alguns arquivos, números decimais vêm escritos como `3,14` em vez de `3.14`.
 - Por fim, transformamos essa coluna em números de ponto flutuante (`float`), para que possa ser usada em cálculos, análises e modelos sem causar erros.
 
 Esse passo garante que a informação da coluna `F0103` seja precisa e utilizável em todas as etapas seguintes do processamento de dados.
@@ -181,9 +187,10 @@ for col in colunas_numericas:
 print(f"✅ {contador} negativos convertidos → NaN")
 
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, identificamos todas as colunas numéricas e substituímos valores negativos por valores vazios (NaN).
 
@@ -229,9 +236,10 @@ if colunas_remover:
 print(f"✅ Shape: {df.shape}")
 
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, realizamos uma análise de dados faltantes (`missing values`) em cada coluna e removemos aquelas que possuem um percentual alto de ausência de dados.
 
@@ -271,9 +279,10 @@ depois = len(df)
 print(f"✅ Jogadores mantidos: {depois} (removidos: {antes-depois})")
 
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, garantimos que todos os registros (linhas) do dataset contenham pelo menos uma informação nos campos-alvo definidos em `COLUNAS_TARGETS`.
 
@@ -317,29 +326,30 @@ if colunas_cat_imputar:
 
 
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, tratamos os valores faltantes no dataset usando imputação — ou seja, substituímos valores ausentes (`NaN`) por valores calculados com base nos dados disponíveis.
 
 - Colunas numéricas:
 
-    - Identificamos todas as colunas numéricas usando `df.select_dtypes(include=[np.number])`.
+  - Identificamos todas as colunas numéricas usando `df.select_dtypes(include=[np.number])`.
 
-    - Removemos as colunas-alvo (`COLUNAS_TARGETS`) e as colunas marcadas para ignorar (`COLUNAS_IGNORAR`).
+  - Removemos as colunas-alvo (`COLUNAS_TARGETS`) e as colunas marcadas para ignorar (`COLUNAS_IGNORAR`).
 
-    - Criamos um imputador (`SimpleImputer`) usando a estratégia `median` para substituir valores ausentes pela mediana daquela coluna.
+  - Criamos um imputador (`SimpleImputer`) usando a estratégia `median` para substituir valores ausentes pela mediana daquela coluna.
 
-    - Aplicamos a imputação usando `fit_transform`.
+  - Aplicamos a imputação usando `fit_transform`.
 
 - Colunas categóricas:
 
-    - Identificamos as colunas categóricas presentes (`COLUNAS_CATEGORICAS`).
+  - Identificamos as colunas categóricas presentes (`COLUNAS_CATEGORICAS`).
 
-    - Criamos um imputador usando a estratégia `most_frequent` para substituir valores ausentes pelo valor mais frequente da coluna (moda).
+  - Criamos um imputador usando a estratégia `most_frequent` para substituir valores ausentes pelo valor mais frequente da coluna (moda).
 
-    - Aplicamos a imputação usando fit_transform.
+  - Aplicamos a imputação usando fit_transform.
 
 </small>
 
@@ -377,9 +387,10 @@ for col in colunas_outliers:
 print(f"✅ {outliers_tratados} outliers tratados (substituídos por mediana)")
 
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, detectamos e tratamos outliers — valores extremos que podem distorcer análises e modelos — utilizando o método do Intervalo Interquartílico (IQR) e substituindo-os pela mediana da coluna.
 
@@ -387,17 +398,17 @@ Nesta célula, detectamos e tratamos outliers — valores extremos que podem dis
 
 - Para cada coluna:
 
-    - Calculamos o **primeiro quartil** (`Q1`) e o **terceiro quartil** (`Q3`).
+  - Calculamos o **primeiro quartil** (`Q1`) e o **terceiro quartil** (`Q3`).
 
-    - Determinamos o **Intervalo Interquartílico (IQR)** como `Q3 - Q1`.
+  - Determinamos o **Intervalo Interquartílico (IQR)** como `Q3 - Q1`.
 
-    - Definimos limites inferior (`limite_inf`) e superior (`limite_sup`) como `Q1 - 1.5*IQR` e `Q3 + 1.5*IQR`, respectivamente.
+  - Definimos limites inferior (`limite_inf`) e superior (`limite_sup`) como `Q1 - 1.5*IQR` e `Q3 + 1.5*IQR`, respectivamente.
 
-    - Criamos uma máscara (`outliers_mask`) identificando valores fora desses limites.
+  - Criamos uma máscara (`outliers_mask`) identificando valores fora desses limites.
 
-    - Quando outliers são encontrados, substituímos esses valores pela mediana da coluna.
+  - Quando outliers são encontrados, substituímos esses valores pela mediana da coluna.
 
-    - Contabilizamos quantos outliers foram tratados.
+  - Contabilizamos quantos outliers foram tratados.
 
 </small>
 
@@ -420,9 +431,10 @@ if colunas_cat_presentes:
     print(f"✅ One-Hot concluído: {colunas_antes} → {colunas_depois} colunas")
 
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, aplicamos a técnica de One-Hot Encoding, que transforma colunas categóricas em variáveis numéricas binárias, permitindo que algoritmos de machine learning trabalhem com esses dados.
 
@@ -461,27 +473,28 @@ if len(f07_cols) > 2:
     df['F07_mean'] = df[f07_cols].mean(axis=1)
     print(f"✅ F07_mean criada ({len(f07_cols)} colunas)")
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, realizamos Feature Engineering, criando novas colunas que representam agregações de variáveis relacionadas, para facilitar a análise e potencialmente melhorar a performance de modelos.
 
 - **Agregação F11**:
 
-    - Identificamos colunas cujo nome começa com "`F11`" e que são numéricas.
+  - Identificamos colunas cujo nome começa com "`F11`" e que são numéricas.
 
-    - Se existirem mais de duas colunas nesse grupo, calculamos a média delas linha a linha (`mean(axis=1)`), criando a nova coluna `F11_mean`.
+  - Se existirem mais de duas colunas nesse grupo, calculamos a média delas linha a linha (`mean(axis=1)`), criando a nova coluna `F11_mean`.
 
-    - Exibimos quantas colunas foram utilizadas para essa agregação.
+  - Exibimos quantas colunas foram utilizadas para essa agregação.
 
 - **Agregação F07**:
 
-    - De forma semelhante, identificamos colunas que começam com "`F07`" e que são numéricas.
+  - De forma semelhante, identificamos colunas que começam com "`F07`" e que são numéricas.
 
-    - Se houver mais de duas, calculamos a média e criamos `F07_mean`.
+  - Se houver mais de duas, calculamos a média e criamos `F07_mean`.
 
-    - Exibimos quantas colunas contribuíram para essa agregação.
+  - Exibimos quantas colunas contribuíram para essa agregação.
 
 </small>
 
@@ -504,9 +517,10 @@ if bool_cols:
 else:
     print("ℹ️  Nenhuma coluna booleana encontrada")
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, corrigimos o formato das colunas booleanas do dataset, transformando valores `True`/`False` em `1/0`. Isso é necessário porque muitos algoritmos de machine learning requerem que todos os dados sejam numéricos.
 
@@ -562,9 +576,10 @@ top10 = corr_mean.sort_values(ascending=False).head(10)
 for idx, (feat, corr) in enumerate(top10.items(), 1):
     print(f"   {idx:2d}. {feat:30s} | Corr: {corr:.4f}")
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, realizamos a **seleção de features** com base na correlação entre variáveis numéricas e os targets (`Target1`, `Target2`, `Target3`). O objetivo é manter apenas as colunas que têm relevância estatística para o modelo.
 
@@ -619,9 +634,10 @@ if features_numericas_normalizar:
 
 print(f"✅ DataFrame NORMALIZADO: {df_final_normalizado.shape}")
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, preparamos os **DataFrames finais** para análise e modelagem, criando versões normalizadas e não-normalizadas.
 
@@ -703,9 +719,10 @@ writer.close()
 
 print(f"✅ Arquivo '{output_file}' criado!")
 ```
+
 </details>
 
-<small> 📖 Explicação: 
+<small> 📖 Explicação:
 
 Nesta célula, exportamos os resultados finais para um arquivo Excel estruturado, criando múltiplas abas para facilitar a análise e utilização dos dados.
 
@@ -746,19 +763,21 @@ Essa celula entrega um arquivo organizado e documentado, pronto para análise e 
 ---
 
 ### ✅ **Resumo Geral da Etapa de Limpeza**
-Após a execução de todas as células, o dataset estará pronto para ser utilizado nas próximas fases do projeto, com:  
-- Códigos inválidos convertidos em `NaN`.  
-- Colunas pouco informativas removidas.  
-- Targets completos e consistentes.  
+
+Após a execução de todas as células, o dataset estará pronto para ser utilizado nas próximas fases do projeto, com:
+
+- Códigos inválidos convertidos em `NaN`.
+- Colunas pouco informativas removidas.
+- Targets completos e consistentes.
 - Estrutura final reduzida, porém mais confiável e analisável.
 
 ---
+
 </details>
 
 <details>
 
 <summary> 📊 Fase V2 - Modelagem </summary>
-
 
 ### **🧩 Célula 1 - Instalação de Bibliotecas**
 
@@ -770,20 +789,21 @@ Após a execução de todas as células, o dataset estará pronto para ser utili
 !pip install xgboost lightgbm catboost scikit-learn pandas matplotlib seaborn plotly -q
 print("✅ Bibliotecas instaladas com sucesso!")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula instala todas as bibliotecas necessárias para rodar o projeto de modelagem avançada e visualizações.  
+Esta célula instala todas as bibliotecas necessárias para rodar o projeto de modelagem avançada e visualizações.
 
 O comando `!pip install` funciona dentro de notebooks Jupyter ou Google Colab e serve para instalar pacotes Python diretamente no ambiente.  
-Aqui, estamos instalando:  
+Aqui, estamos instalando:
 
-- **xgboost, lightgbm, catboost** → algoritmos de aprendizado de máquina muito eficientes para regressão e classificação.  
-- **scikit-learn** → biblioteca com ferramentas para pré-processamento, modelagem e avaliação de dados.  
-- **pandas** → manipulação e análise de dados em tabelas.  
-- **matplotlib, seaborn** → geração de gráficos e visualizações.  
-- **plotly** → criação de gráficos interativos.  
+- **xgboost, lightgbm, catboost** → algoritmos de aprendizado de máquina muito eficientes para regressão e classificação.
+- **scikit-learn** → biblioteca com ferramentas para pré-processamento, modelagem e avaliação de dados.
+- **pandas** → manipulação e análise de dados em tabelas.
+- **matplotlib, seaborn** → geração de gráficos e visualizações.
+- **plotly** → criação de gráficos interativos.
 
 </small>
 
@@ -818,24 +838,24 @@ print("     FASE 3 COMPLETA: MODELAGEM AVANÇADA + VISUALIZAÇÕES")
 print("=" * 80)
 
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Nesta célula, carregamos todas as bibliotecas necessárias para manipulação, análise, modelagem e visualização dos dados.  
+Nesta célula, carregamos todas as bibliotecas necessárias para manipulação, análise, modelagem e visualização dos dados.
 
-- **pandas** e **numpy**: manipulação e cálculo de dados.  
-- **matplotlib.pyplot** e **seaborn**: criação de gráficos estáticos.  
-- **warnings**: para suprimir mensagens de aviso indesejadas.  
-- **sklearn.model_selection**: funções para divisão dos dados e validação cruzada.  
-- **sklearn.linear_model**: modelos de regressão Linear e Ridge.  
-- **sklearn.ensemble**: algoritmos ensemble como Random Forest e Gradient Boosting.  
-- **sklearn.metrics**: cálculo de métricas de avaliação como RMSE e R².  
-- **xgboost, lightgbm, catboost**: algoritmos de machine learning de alta performance.  
-- **pickle**: salvar e carregar modelos treinados.  
+- **pandas** e **numpy**: manipulação e cálculo de dados.
+- **matplotlib.pyplot** e **seaborn**: criação de gráficos estáticos.
+- **warnings**: para suprimir mensagens de aviso indesejadas.
+- **sklearn.model_selection**: funções para divisão dos dados e validação cruzada.
+- **sklearn.linear_model**: modelos de regressão Linear e Ridge.
+- **sklearn.ensemble**: algoritmos ensemble como Random Forest e Gradient Boosting.
+- **sklearn.metrics**: cálculo de métricas de avaliação como RMSE e R².
+- **xgboost, lightgbm, catboost**: algoritmos de machine learning de alta performance.
+- **pickle**: salvar e carregar modelos treinados.
 
 As últimas linhas configuram o estilo dos gráficos (`sns.set_style('whitegrid')`) e imprimem um título indicando o início da fase 3.
-
 
 </small>
 
@@ -855,20 +875,20 @@ print(f"   Total de Jogadores: {len(df)}")
 print(f"   Total de Colunas: {len(df.columns)}")
 
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula carrega os dados de um arquivo Excel chamado `'Dados_para_modelo.xlsx'` usando a biblioteca **pandas** e armazena em um DataFrame chamado `df`.  
+Esta célula carrega os dados de um arquivo Excel chamado `'Dados_para_modelo.xlsx'` usando a biblioteca **pandas** e armazena em um DataFrame chamado `df`.
 
-O DataFrame é uma estrutura de dados semelhante a uma tabela, muito utilizada em análise de dados.  
+O DataFrame é uma estrutura de dados semelhante a uma tabela, muito utilizada em análise de dados.
 
-- `df.shape` retorna uma tupla (número de linhas, número de colunas) para verificar o tamanho do dataset.  
-- `len(df)` retorna o número total de linhas, representando a quantidade de jogadores.  
-- `len(df.columns)` retorna o número total de colunas, representando as variáveis disponíveis.  
+- `df.shape` retorna uma tupla (número de linhas, número de colunas) para verificar o tamanho do dataset.
+- `len(df)` retorna o número total de linhas, representando a quantidade de jogadores.
+- `len(df.columns)` retorna o número total de colunas, representando as variáveis disponíveis.
 
 Essas impressões garantem que os dados foram carregados corretamente antes de prosseguir.
-
 
 </small>
 
@@ -890,19 +910,21 @@ y3 = df['Target3']
 print(f"✅ Features (X) separadas. Total de features: {X.shape[1]}")
 print(f"✅ Targets (y1, y2, y3) separados.")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Nesta célula, o dataset é separado em duas partes principais:  
+Nesta célula, o dataset é separado em duas partes principais:
 
-- **Features (X)**: as variáveis de entrada que serão usadas para prever algo.  
-- **Targets (y)**: as variáveis que queremos prever.  
+- **Features (X)**: as variáveis de entrada que serão usadas para prever algo.
+- **Targets (y)**: as variáveis que queremos prever.
 
-No código:  
-- `targets` é uma lista com os nomes das colunas alvo (`Target1`, `Target2`, `Target3`).  
-- `X` contém todas as colunas exceto as targets, obtido com `df.drop(columns=targets)`.  
-- `y1`, `y2` e `y3` contêm cada uma das targets separadamente.  
+No código:
+
+- `targets` é uma lista com os nomes das colunas alvo (`Target1`, `Target2`, `Target3`).
+- `X` contém todas as colunas exceto as targets, obtido com `df.drop(columns=targets)`.
+- `y1`, `y2` e `y3` contêm cada uma das targets separadamente.
 
 </small>
 
@@ -923,18 +945,20 @@ print(f"✅ Dados divididos em 80% treino e 20% teste.")
 print(f"   Tamanho do treino: {len(X_train)} jogadores")
 print(f"   Tamanho do teste:  {len(X_test)} jogadores")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula divide os dados em conjuntos de treino e teste usando a função `train_test_split` do **scikit-learn**.  
+Esta célula divide os dados em conjuntos de treino e teste usando a função `train_test_split` do **scikit-learn**.
 
-- `test_size=0.2` significa que 20% dos dados serão usados para teste e 80% para treino.  
-- `random_state=42` garante que a divisão seja reproduzível (sempre igual).  
+- `test_size=0.2` significa que 20% dos dados serão usados para teste e 80% para treino.
+- `random_state=42` garante que a divisão seja reproduzível (sempre igual).
 
-Para cada target (`y1`, `y2`, `y3`), são criados conjuntos separados:  
-- `X_train`, `X_test`: dados de entrada para treino e teste.  
-- `y1_train`, `y1_test`, etc.: valores alvo correspondentes.  
+Para cada target (`y1`, `y2`, `y3`), são criados conjuntos separados:
+
+- `X_train`, `X_test`: dados de entrada para treino e teste.
+- `y1_train`, `y1_test`, etc.: valores alvo correspondentes.
 
 </small>
 
@@ -958,18 +982,19 @@ modelos = {
 }
 print(f"✅ {len(modelos)} modelos definidos para teste.")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Nesta célula definimos um dicionário chamado `modelos` contendo vários algoritmos de machine learning para serem testados no projeto.  
+Nesta célula definimos um dicionário chamado `modelos` contendo vários algoritmos de machine learning para serem testados no projeto.
 
-Cada chave é o nome do modelo e cada valor é uma instância do modelo com parâmetros definidos:  
+Cada chave é o nome do modelo e cada valor é uma instância do modelo com parâmetros definidos:
 
-- **Linear Regression** e **Ridge**: modelos lineares básicos.  
-- **Random Forest**: modelo ensemble baseado em árvores, com parâmetros como `n_estimators` (número de árvores) e `max_depth` (profundidade máxima).  
-- **Gradient Boosting**: modelo ensemble que ajusta sequencialmente as árvores para reduzir erros.  
-- **XGBoost, LightGBM, CatBoost**: algoritmos avançados e muito eficientes para regressão, com parâmetros como `learning_rate`, `max_depth` e número de iterações (`n_estimators` ou `iterations`).  
+- **Linear Regression** e **Ridge**: modelos lineares básicos.
+- **Random Forest**: modelo ensemble baseado em árvores, com parâmetros como `n_estimators` (número de árvores) e `max_depth` (profundidade máxima).
+- **Gradient Boosting**: modelo ensemble que ajusta sequencialmente as árvores para reduzir erros.
+- **XGBoost, LightGBM, CatBoost**: algoritmos avançados e muito eficientes para regressão, com parâmetros como `learning_rate`, `max_depth` e número de iterações (`n_estimators` ou `iterations`).
 
 </small>
 
@@ -992,27 +1017,29 @@ def treinar_avaliar_modelo(modelo, X_train, X_test, y_train, y_test):
     return {'modelo': modelo, 'y_pred': y_pred, 'r2': r2, 'rmse': rmse, 'mae': mae}
 
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula define uma função chamada `treinar_avaliar_modelo` que serve para treinar um modelo de machine learning e avaliar seu desempenho.  
+Esta célula define uma função chamada `treinar_avaliar_modelo` que serve para treinar um modelo de machine learning e avaliar seu desempenho.
 
-Parâmetros da função:  
-- `modelo`: objeto do modelo a ser treinado.  
-- `X_train`, `X_test`: dados de entrada para treino e teste.  
-- `y_train`, `y_test`: valores alvo para treino e teste.  
+Parâmetros da função:
 
-O processo realizado dentro da função:  
-1. `modelo.fit(X_train, y_train)` → treina o modelo com os dados de treino.  
-2. `modelo.predict(X_test)` → faz previsões com os dados de teste.  
-3. Calcula métricas de avaliação:  
-   - **R² (r2_score)**: mede a qualidade da previsão (quanto mais próximo de 1, melhor).  
-   - **RMSE (root mean squared error)**: erro médio quadrático.  
-   - **MAE (mean absolute error)**: erro absoluto médio.  
+- `modelo`: objeto do modelo a ser treinado.
+- `X_train`, `X_test`: dados de entrada para treino e teste.
+- `y_train`, `y_test`: valores alvo para treino e teste.
+
+O processo realizado dentro da função:
+
+1. `modelo.fit(X_train, y_train)` → treina o modelo com os dados de treino.
+2. `modelo.predict(X_test)` → faz previsões com os dados de teste.
+3. Calcula métricas de avaliação:
+   - **R² (r2_score)**: mede a qualidade da previsão (quanto mais próximo de 1, melhor).
+   - **RMSE (root mean squared error)**: erro médio quadrático.
+   - **MAE (mean absolute error)**: erro absoluto médio.
 
 A função retorna um dicionário com o modelo treinado, previsões e métricas calculadas.
-
 
 </small>
 
@@ -1050,22 +1077,23 @@ for nome, modelo in modelos.items():
 melhor_t3 = max(resultados_t3.items(), key=lambda x: x[1]['r2'])
 print(f"🎯 Target 3 | Melhor Modelo: {melhor_t3[0]:<20} | R² = {melhor_t3[1]['r2']:.4f}")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula realiza o treinamento e avaliação de todos os modelos definidos para cada target (Target1, Target2, Target3).  
+Esta célula realiza o treinamento e avaliação de todos os modelos definidos para cada target (Target1, Target2, Target3).
 
-O processo é feito em três blocos:  
-1. Para cada target, criamos um dicionário (`resultados_t1`, `resultados_t2`, `resultados_t3`) para armazenar os resultados.  
-2. Usamos um loop `for` para percorrer cada modelo definido no dicionário `modelos`.  
-   - `type(modelo)(**modelo.get_params())` cria uma nova instância do modelo com os mesmos parâmetros.  
-   - Chamamos a função `treinar_avaliar_modelo` para treinar e avaliar o modelo.  
-3. Usamos `max(..., key=lambda x: x[1]['r2'])` para selecionar o modelo com melhor R² para cada target.  
+O processo é feito em três blocos:
+
+1. Para cada target, criamos um dicionário (`resultados_t1`, `resultados_t2`, `resultados_t3`) para armazenar os resultados.
+2. Usamos um loop `for` para percorrer cada modelo definido no dicionário `modelos`.
+   - `type(modelo)(**modelo.get_params())` cria uma nova instância do modelo com os mesmos parâmetros.
+   - Chamamos a função `treinar_avaliar_modelo` para treinar e avaliar o modelo.
+3. Usamos `max(..., key=lambda x: x[1]['r2'])` para selecionar o modelo com melhor R² para cada target.
 
 Ao final, imprimimos o nome do melhor modelo e seu R² para cada target.  
 Isso ajuda a identificar qual modelo performou melhor para cada variável alvo.
-
 
 </small>
 
@@ -1115,23 +1143,24 @@ plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.savefig('grafico_dispersao_previsto_vs_real.png', dpi=300, bbox_inches='tight')
 print("✅ Gráfico de Dispersão (Previsto vs. Real) salvo como 'grafico_dispersao_previsto_vs_real.png'")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula cria gráficos de dispersão comparando valores previstos pelos melhores modelos com os valores reais para cada target (Target1, Target2, Target3).  
+Esta célula cria gráficos de dispersão comparando valores previstos pelos melhores modelos com os valores reais para cada target (Target1, Target2, Target3).
 
-O processo inclui:  
-- Criação de uma figura com três subplots (`plt.subplots(1, 3, figsize=(18, 5))`).  
-- Para cada target:  
-  - Plotar valores reais (`y_test`) vs. valores previstos (`y_pred`) usando `scatter()`.  
-  - Adicionar uma linha pontilhada (`plot()`) representando a previsão perfeita (quando previsto = real).  
-  - Configurar título, rótulos e legenda.  
-- `plt.tight_layout()` ajusta o espaçamento entre gráficos.  
-- `plt.savefig()` salva a figura como `'grafico_dispersao_previsto_vs_real.png'`.  
+O processo inclui:
+
+- Criação de uma figura com três subplots (`plt.subplots(1, 3, figsize=(18, 5))`).
+- Para cada target:
+  - Plotar valores reais (`y_test`) vs. valores previstos (`y_pred`) usando `scatter()`.
+  - Adicionar uma linha pontilhada (`plot()`) representando a previsão perfeita (quando previsto = real).
+  - Configurar título, rótulos e legenda.
+- `plt.tight_layout()` ajusta o espaçamento entre gráficos.
+- `plt.savefig()` salva a figura como `'grafico_dispersao_previsto_vs_real.png'`.
 
 Esse tipo de gráfico ajuda a visualizar a precisão do modelo e identificar padrões ou desvios.
-
 
 </small>
 
@@ -1171,25 +1200,27 @@ plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.savefig('grafico_feature_importance.png', dpi=300, bbox_inches='tight')
 print("✅ Gráfico de Importância das Features salvo como 'grafico_feature_importance.png'")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula cria gráficos mostrando a importância das features para os melhores modelos de cada target.  
+Esta célula cria gráficos mostrando a importância das features para os melhores modelos de cada target.
 
-O processo inclui:  
-- Definição da função `plotar_importancia()`, que:  
-  - Recebe informações do melhor modelo (`melhor_modelo_info`), o nome do target, os nomes das features e um eixo (`ax`) para plotagem.  
-  - Verifica se o modelo possui atributo `feature_importances_` (método comum em modelos de árvore). Caso seja CatBoost, usa `get_feature_importance()`.  
-  - Cria um DataFrame com nomes e importâncias das features, ordenando e selecionando as 15 mais importantes.  
-  - Plota um gráfico de barras horizontais (`barh`).  
+O processo inclui:
 
-- Criação de uma figura com três subplots para cada target.  
-- Chamadas da função `plotar_importancia` para cada target.  
-- Ajuste de layout e salvamento do gráfico como `'grafico_feature_importance.png'`.  
+- Definição da função `plotar_importancia()`, que:
+
+  - Recebe informações do melhor modelo (`melhor_modelo_info`), o nome do target, os nomes das features e um eixo (`ax`) para plotagem.
+  - Verifica se o modelo possui atributo `feature_importances_` (método comum em modelos de árvore). Caso seja CatBoost, usa `get_feature_importance()`.
+  - Cria um DataFrame com nomes e importâncias das features, ordenando e selecionando as 15 mais importantes.
+  - Plota um gráfico de barras horizontais (`barh`).
+
+- Criação de uma figura com três subplots para cada target.
+- Chamadas da função `plotar_importancia` para cada target.
+- Ajuste de layout e salvamento do gráfico como `'grafico_feature_importance.png'`.
 
 Esses gráficos ajudam a entender quais variáveis têm maior influência na previsão do modelo.
-
 
 </small>
 
@@ -1211,20 +1242,21 @@ print(f"✅ Modelo para Target 2 ({melhor_t2[0]}) salvo como 'modelo_target2_fin
 with open('modelo_target3_final.pkl', 'wb') as f: pickle.dump(melhor_t3[1]['modelo'], f)
 print(f"✅ Modelo para Target 3 ({melhor_t3[0]}) salvo como 'modelo_target3_final.pkl'")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula salva os melhores modelos encontrados para cada target usando a biblioteca **pickle**.  
+Esta célula salva os melhores modelos encontrados para cada target usando a biblioteca **pickle**.
 
-O processo:  
-- Para cada target, abrimos um arquivo `.pkl` em modo de escrita binária (`'wb'`).  
-- Usamos `pickle.dump()` para salvar o modelo treinado (`melhor_tX[1]['modelo']`).  
-- Cada arquivo recebe um nome correspondente ao target (`modelo_target1_final.pkl`, etc.).  
-- Mensagens confirmam que os modelos foram salvos com sucesso.  
+O processo:
+
+- Para cada target, abrimos um arquivo `.pkl` em modo de escrita binária (`'wb'`).
+- Usamos `pickle.dump()` para salvar o modelo treinado (`melhor_tX[1]['modelo']`).
+- Cada arquivo recebe um nome correspondente ao target (`modelo_target1_final.pkl`, etc.).
+- Mensagens confirmam que os modelos foram salvos com sucesso.
 
 Esses arquivos `.pkl` podem ser carregados posteriormente para fazer previsões sem precisar treinar novamente o modelo.
-
 
 </small>
 
@@ -1276,24 +1308,45 @@ print("  4. Preparar a apresentação de slides contando a história do projeto,
 
 print("\n✨ Excelente trabalho! A etapa de modelagem e análise está concluída. ✨")
 ```
+
 </details>
 
 <small> 📖 Explicação:
 
-Esta célula gera um relatório final resumindo os resultados obtidos na fase de modelagem.  
+Esta célula gera um relatório final resumindo os resultados obtidos na fase de modelagem.
 
-O conteúdo inclui:  
-- **Resumo dos Melhores Modelos** para cada target, exibindo:  
-  - Nome do modelo com melhor performance.  
-  - R² (R-quadrado): mede a qualidade da previsão.  
-  - RMSE: erro médio quadrático.  
-  - MAE: erro absoluto médio.  
-- **Lista dos arquivos gerados** no processo, incluindo modelos `.pkl` e gráficos.  
-- **Próximos passos sugeridos**, como integrar os modelos salvos a uma API e criar dashboards interativos.  
+O conteúdo inclui:
 
+- **Resumo dos Melhores Modelos** para cada target, exibindo:
+  - Nome do modelo com melhor performance.
+  - R² (R-quadrado): mede a qualidade da previsão.
+  - RMSE: erro médio quadrático.
+  - MAE: erro absoluto médio.
+- **Lista dos arquivos gerados** no processo, incluindo modelos `.pkl` e gráficos.
+- **Próximos passos sugeridos**, como integrar os modelos salvos a uma API e criar dashboards interativos.
 
 </small>
 
 ---
 
 </details>
+
+---
+
+**📈 Visão Geral dos Resultados da Modelagem**
+
+<small>
+Nesta fase, o dataset limpo e otimizado foi utilizado para treinar e avaliar **7 algoritmos de regressão diferentes**, com o objetivo de encontrar o melhor modelo para prever cada uma das três métricas-alvo.
+
+Após o treinamento e a validação, os modelos com melhor desempenho, medido pelo coeficiente de determinação (R²), foram:
+
+- **Target 1**: **CatBoost**, com **R² = 0.577**. Isso indica que o modelo consegue explicar aproximadamente **57,7%** da variação nos dados.
+- **Target 2**: **Random Forest**, com **R² = 0.406**, explicando cerca de **40,6%** da variância.
+- **Target 3**: **Random Forest**, com **R² = 0.420**, explicando aproximadamente **42,0%** da variância.
+
+A imagem abaixo apresenta uma análise visual da performance desses três modelos. Cada gráfico de dispersão compara os **valores reais** (eixo X) com os **valores previstos** pelo modelo (eixo Y). A "Linha Perfeita" (tracejada em vermelho) representa o cenário ideal, onde a previsão é exatamente igual ao valor real.
+
+Quanto mais próximos os pontos estiverem dessa linha, mais precisas são as previsões do modelo. Essa visualização ajuda a entender rapidamente a capacidade preditiva dos modelos escolhidos.
+</small>
+
+![alt text](data/processed/02_model_ready/grafico_dispersao_previsto_vs_real.png)
