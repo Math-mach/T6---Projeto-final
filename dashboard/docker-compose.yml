@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # 1. SERVIÇO DO BANCO DE DADOS (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: daruma_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  # 2. SERVIÇO DA API (Flask/FastAPI)
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      # Variáveis de ambiente para o Flask se conectar ao DB
+      DATABASE_URL: postgresql://user:password@db:5432/daruma_db
+      JWT_SECRET_KEY: 'sua_chave_secreta_aqui'
+    volumes:
+      # Garante que os artefatos ML estejam acessíveis dentro do container
+      - ./ml_artifacts:/app/ml_artifacts
+    depends_on:
+      - db
+    ports:
+      - "5000:5000"
+
+  # 3. SERVIÇO DO DASHBOARD (Streamlit)
+  frontend:
+    build: ./frontend
+    restart: always
+    environment:
+      # Variável para o Streamlit saber onde está o Backend
+      BACKEND_URL: http://backend:5000
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+
+volumes:
+  postgres_data:
