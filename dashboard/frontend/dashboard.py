@@ -96,6 +96,27 @@ def render_main_dashboard():
                     st.error(f"Erro na previsão: {response.text}")
             except Exception as e:
                 st.error(f"Não foi possível conectar ao Backend: {e}")
+        tab1, tab2 = st.tabs(["📊 Nova Previsão", "⏳ Histórico"])
+
+    with tab1:
+        # A lógica de upload de arquivo e execução de previsão vai aqui
+        # ... (O código do upload e if uploaded_file is not None ... ) ...
+
+        # **CHAMADA À FUNÇÃO DE PREVISÃO AGREGADA**
+        if 'last_results' in st.session_state and st.session_state.last_results is not None:
+             st.markdown("---")
+             render_prediction_results(st.session_state.last_results) # Chama a função para renderizar após o upload
+
+    with tab2:
+        st.header("Histórico de Previsões Salvas")
+        if st.button("Carregar Histórico"):
+            response = requests.get(f"{BACKEND_URL}/history", headers=get_auth_headers())
+            if response.status_code == 200:
+                history_data = pd.DataFrame(response.json())
+                st.dataframe(history_data, use_container_width=True)
+                st.info("O histórico mostra o número de jogadores processados em cada upload.")
+            else:
+                st.error("Não foi possível carregar o histórico.")
 
 # --- Renderização Condicional ---
 if st.session_state.logged_in:
@@ -109,5 +130,56 @@ def render_prediction_results(df_results):
     st.subheader("Resultados Agregados")
     st.dataframe(df_results, use_container_width=True)
     # ... (Lógica de gráficos e detalhe do jogador) ...
+# Nova função de renderização (no final do dashboard.py)
+def render_prediction_results(df_results):
+    st.subheader("Resultados Agregados")
+    df_output = df_results[['Código de Acesso', 'Previsão T1', 'Previsão T2', 'Previsão T3']].copy()
+    st.dataframe(df_output, use_container_width=True)
 
+    # ... (Mantenha a lógica de Download do código anterior) ...
+
+    st.markdown("---")
+    # --- GRÁFICO DE COMPARAÇÃO ---
+    st.header("Comparação Visual dos Targets Previstos")
+    df_plot = df_output.rename(columns={'Previsão T1':'Target 1', 'Previsão T2':'Target 2', 'Previsão T3':'Target 3'})
+    
+    df_melted = df_plot.melt(
+        id_vars='Código de Acesso', 
+        value_vars=['Target 1', 'Target 2', 'Target 3'], 
+        var_name='Target', 
+        value_name='Valor Previsto'
+    )
+    fig_bar = px.bar(
+        df_melted,
+        x='Código de Acesso', 
+        y='Valor Previsto', 
+        color='Target',
+        title="Previsões dos 3 Targets por Jogador",
+        barmode='group'
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    st.markdown("---")
+    # --- DASHBOARD DETALHADO POR JOGADOR (EXPLICATIVO) ---
+    st.header("Dashboard Detalhado por Jogador")
+    jogador_selecionado = st.selectbox(
+        "Selecione um Jogador (Código de Acesso):",
+        df_results['Código de Acesso'].unique(),
+        key='detalhe_key' # Chave única para evitar conflitos
+    )
+    
+    if jogador_selecionado:
+        # Lógica de exibição das métricas e explicação
+        jogador_data = df_output[df_output['Código de Acesso'] == jogador_selecionado].iloc[0]
+        
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.subheader(f"🚀 Previsões Finais para {jogador_selecionado}")
+            st.metric(label="Previsão Target 1 (T1)", value=f"{jogador_data['Previsão T1']:.2f}")
+
+        with col2:
+            st.subheader("💡 Explicação da Previsão")
+            st.info("Esta seção seria enriquecida com valores SHAP/LIME gerados no Backend para uma explicação robusta, ligando os *inputs* do jogador às previsões.")
+            # ... (Ajuste o texto para referenciar seus modelos e features) ...
 # Fim do dashboard.py
