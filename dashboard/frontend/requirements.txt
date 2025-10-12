@@ -1,0 +1,4 @@
+streamlit
+requests # Para fazer chamadas HTTP ao Flask
+pandas
+plotly-express
