@@ -3,6 +3,12 @@ Flask-SQLAlchemy
 Flask-Bcrypt
 Flask-JWT-Extended
 pandas
-scikit-learn
+scikit-learn==1.6.1
 joblib
 psycopg2-binary
+openpyxl
+catboost
+optuna
+xgboost
+lightgbm
+xlsxwriter

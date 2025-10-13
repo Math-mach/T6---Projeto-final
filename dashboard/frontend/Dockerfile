@@ -3,11 +3,11 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Instala dependências
-COPY frontend/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copia o código da aplicação
-COPY frontend/dashboard.py .
+COPY dashboard.py .
 
 # Expor a porta do Streamlit
 EXPOSE 8501

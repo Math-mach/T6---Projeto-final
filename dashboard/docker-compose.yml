@@ -22,9 +22,6 @@ services:
       # Variáveis de ambiente para o Flask se conectar ao DB
       DATABASE_URL: postgresql://user:password@db:5432/daruma_db
       JWT_SECRET_KEY: 'sua_chave_secreta_aqui'
-    volumes:
-      # Garante que os artefatos ML estejam acessíveis dentro do container
-      - ./ml_artifacts:/app/ml_artifacts
     depends_on:
       - db
     ports:
