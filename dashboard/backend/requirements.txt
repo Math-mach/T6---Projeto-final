@@ -12,3 +12,7 @@ optuna
 xgboost
 lightgbm
 xlsxwriter
+shap
+gunicorn
+scikit-learn
+numpy

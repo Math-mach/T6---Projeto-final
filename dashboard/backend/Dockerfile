@@ -15,4 +15,4 @@ COPY app.py /app/
 EXPOSE 5000
 
 # Comando para rodar a aplicação
-CMD ["flask", "run", "--host", "0.0.0.0"]
+CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5000", "app:app"]

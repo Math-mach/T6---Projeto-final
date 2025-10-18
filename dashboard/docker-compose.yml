@@ -27,17 +27,19 @@ services:
     ports:
       - "5000:5000"
 
-  # 3. SERVIÇO DO DASHBOARD (Streamlit)
+  # 3. SERVIÇO DO DASHBOARD (PLOTLY DASH)
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend  # Assumindo que o Dockerfile e o código estão em uma pasta 'frontend'
     restart: always
     environment:
-      # Variável para o Streamlit saber onde está o Backend
+      # Variável para o Dash saber onde está o Backend
       BACKEND_URL: http://backend:5000
     depends_on:
       - backend
     ports:
-      - "8501:8501"
+      # CORREÇÃO: Mapeando a porta padrão do Dash (8050)
+      - "8050:8050" 
 
 volumes:
   postgres_data:

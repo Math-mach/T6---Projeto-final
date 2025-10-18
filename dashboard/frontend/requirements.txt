@@ -1,5 +1,14 @@
-streamlit
 requests # Para fazer chamadas HTTP ao Flask
 pandas
 plotly-express
+plotly
 xlsxwriter
+shap
+matplotlib
+dash 
+dash-bootstrap-components 
+dash-core-components 
+dash-html-components 
+dash-table 
+numpy 
+shap
