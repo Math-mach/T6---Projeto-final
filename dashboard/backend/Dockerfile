@@ -15,4 +15,5 @@ COPY app.py /app/
 EXPOSE 5000
 
 # Comando para rodar a aplicação
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5000", "app:app"]
+#CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["python", "app.py"]

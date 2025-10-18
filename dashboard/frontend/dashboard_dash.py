@@ -292,10 +292,17 @@ def run_prediction(n_clicks, session_data, upload_data):
     try:
         response = requests.post(f"{BACKEND_URL}/predict", headers=headers, files=files)
         if response.status_code == 200:
-            predictions = response.json()
-            # Salva os resultados na sessão para uso futuro (filtros, etc.)
-            session_data['last_results'] = predictions
-            return render_prediction_results(predictions), session_data
+            response_json = response.json()
+            
+            # ### CORREÇÃO AQUI ###
+            # Extraia a parte que contém a lista de previsões para a tabela/gráficos.
+            predictions_list = response_json.get('predictions')
+
+            # Salva os resultados COMPLETOS (incluindo SHAP) na sessão
+            session_data['last_results'] = response_json
+            
+            # Passa APENAS a lista de previsões para a função de renderização
+            return render_prediction_results(predictions_list), session_data
         else:
             error_msg = response.json().get('msg', 'Ocorreu um erro na previsão.')
             return dbc.Alert(f"Erro na API: {error_msg}", color="danger"), dash.no_update

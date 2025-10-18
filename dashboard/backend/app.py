@@ -51,8 +51,8 @@ try:
     SCALER = joblib.load(f"{ARTIFACTS_PATH}/scaler.pkl")
     with open(f"{ARTIFACTS_PATH}/features_selecionadas.pkl", "rb") as f:
         FEATURES = pickle.load(f)
-    with open(f"{ARTIFACTS_PATH}/COLUNAS_CATEGORICAS.pkl", "rb") as f:
-        CAT_COLS = pickle.load(f)
+    #with open(f"{ARTIFACTS_PATH}/COLUNAS_CATEGORICAS.pkl", "rb") as f:
+     #   CAT_COLS = pickle.load(f)
     print("Artefatos de ML carregados com sucesso.")
     
     print("Criando explainers SHAP...")
