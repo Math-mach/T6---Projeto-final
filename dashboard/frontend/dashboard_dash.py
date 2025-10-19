@@ -406,12 +406,36 @@ def update_shap_graphs(selected_player, session_data):
     if not selected_player or not session_data or not session_data.get('last_results'):
         return None
 
+    all_predictions = session_data['last_results'].get('predictions', [])
     shap_data = session_data['last_results'].get('shap_data', {})
+    
+    # Encontra os dados de previsão para o jogador selecionado
+    player_predictions = next((p for p in all_predictions if p['Código de Acesso'] == selected_player), None)
+    
+    # Encontra os dados SHAP para o jogador selecionado
     player_shap_data = shap_data.get(selected_player)
 
-    if not player_shap_data:
-        return dbc.Alert("Dados SHAP não encontrados para o jogador selecionado.", color="warning")
+    if not player_shap_data or not player_predictions:
+        return dbc.Alert("Dados não encontrados para o jogador selecionado.", color="warning")
 
+    # --- ### NOVA SEÇÃO: CRIAÇÃO DOS CARTÕES DE RESULTADO (KPIs) ### ---
+    kpi_cards = dbc.Row([
+        dbc.Col(dbc.Card([
+            dbc.CardHeader("Previsão Target 1"),
+            dbc.CardBody(html.H4(f"{player_predictions.get('Previsão T1', 'N/A')}", className="card-title"))
+        ], color="primary", inverse=True), md=4),
+        dbc.Col(dbc.Card([
+            dbc.CardHeader("Previsão Target 2"),
+            dbc.CardBody(html.H4(f"{player_predictions.get('Previsão T2', 'N/A')}", className="card-title"))
+        ], color="success", inverse=True), md=4),
+        dbc.Col(dbc.Card([
+            dbc.CardHeader("Previsão Target 3"),
+            dbc.CardBody(html.H4(f"{player_predictions.get('Previsão T3', 'N/A')}", className="card-title"))
+        ], color="info", inverse=True), md=4)
+    ], className="mb-4")
+
+
+    # --- Geração dos gráficos de barras SHAP (lógica existente) ---
     graphs = []
     for target_key, data in player_shap_data.items():
         if not all(k in data for k in ['feature_names', 'shap_values']):
@@ -433,7 +457,8 @@ def update_shap_graphs(selected_player, session_data):
         fig.update_layout(yaxis={'categoryorder': 'total ascending'})
         graphs.append(dcc.Graph(figure=fig))
     
-    return html.Div(graphs) if graphs else None
+    # --- Retorna os cartões e os gráficos juntos ---
+    return html.Div([kpi_cards] + graphs) if graphs else html.Div(kpi_cards)
 
 if __name__ == '__main__':
     # Use 'debug=False' para produção com Gunicorn
