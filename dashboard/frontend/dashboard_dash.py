@@ -349,7 +349,7 @@ def load_feature_importance(n_clicks, data):
 # --- CALLBACK DO SHAP (Sem alterações) ---
 @app.callback(
     Output('shap-analysis-output', 'children'),
-    Input('session-store', 'data')
+    Input('session-store', 'data') # Dispara quando os resultados da sessão são atualizados
 )
 def render_shap_analysis(session_data):
     if not session_data or 'last_results' not in session_data or not session_data['last_results']:
@@ -357,26 +357,68 @@ def render_shap_analysis(session_data):
 
     shap_data = session_data['last_results'].get('shap_data')
     if not shap_data:
+        return None # Não renderiza nada se não houver dados SHAP
+
+    # Pega a lista de jogadores (as chaves do dicionário shap_data)
+    jogadores = list(shap_data.keys())
+    
+    return html.Div([
+        html.H4("Análise de Contribuição das Features (SHAP)", className="mt-5"),
+        html.P("Selecione um jogador para ver como cada feature contribuiu para a sua previsão. Valores positivos empurram a previsão para cima, e valores negativos, para baixo."),
+        
+        dbc.Row([
+            dbc.Col(
+                dcc.Dropdown(
+                    id='shap-player-dropdown',
+                    options=[{'label': j, 'value': j} for j in jogadores],
+                    value=jogadores[0], # Seleciona o primeiro jogador por padrão
+                    clearable=False
+                ),
+                width=12, md=6, lg=4
+            )
+        ], className="mb-4"),
+
+        # Este Div receberá os gráficos do jogador selecionado
+        dcc.Loading(html.Div(id='shap-graphs-container'))
+    ])
+
+@app.callback(
+    Output('shap-graphs-container', 'children'),
+    Input('shap-player-dropdown', 'value'),
+    State('session-store', 'data')
+)
+def update_shap_graphs(selected_player, session_data):
+    if not selected_player or not session_data or not session_data.get('last_results'):
         return None
 
+    shap_data = session_data['last_results'].get('shap_data', {})
+    player_shap_data = shap_data.get(selected_player)
+
+    if not player_shap_data:
+        return dbc.Alert("Dados SHAP não encontrados para o jogador selecionado.", color="warning")
+
     graphs = []
-    for target_key, data in shap_data.items():
+    for target_key, data in player_shap_data.items():
         if not all(k in data for k in ['feature_names', 'shap_values']):
             continue
-        df_shap = pd.DataFrame({'feature': data['feature_names'], 'shap_value': data['shap_values']}).sort_values(by='shap_value', key=abs, ascending=False).head(15)
+            
+        df_shap = pd.DataFrame({
+            'feature': data['feature_names'],
+            'shap_value': data['shap_values']
+        }).sort_values(by='shap_value', key=abs, ascending=False).head(15)
+
         fig = px.bar(
-            df_shap, x='shap_value', y='feature', orientation='h',
-            title=f"Principais Contribuições (SHAP) para Target {target_key[1:]} (1º Jogador)",
+            df_shap,
+            x='shap_value',
+            y='feature',
+            orientation='h',
+            title=f"Contribuições (SHAP) para {target_key} do Jogador: {selected_player}",
             labels={'shap_value': 'Impacto na Previsão', 'feature': 'Feature'}
         )
         fig.update_layout(yaxis={'categoryorder': 'total ascending'})
         graphs.append(dcc.Graph(figure=fig))
     
-    return html.Div([
-        html.H4("Análise de Contribuição das Features (SHAP)", className="mt-5"),
-        html.P("Estes gráficos mostram como cada feature contribuiu para a previsão do primeiro jogador na lista. Valores positivos empurram a previsão para cima, e valores negativos, para baixo."),
-        *graphs
-    ]) if graphs else None
+    return html.Div(graphs) if graphs else None
 
 if __name__ == '__main__':
     # Use 'debug=False' para produção com Gunicorn

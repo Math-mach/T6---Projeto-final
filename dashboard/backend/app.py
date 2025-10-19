@@ -227,17 +227,37 @@ def predict():
         # ### MODIFICADO: Chamada única à função refatorada ###
         df_results, df_scaled_for_shap = preprocess_and_predict(df_new, MODELS, SCALER, FEATURES)
 
-        # Cálculo SHAP (agora sem reprocessamento)
+        # --- ### NOVA LÓGICA DE CÁLCULO SHAP PARA TODOS OS JOGADORES ### ---
         shap_data_for_json = {}
         if not df_scaled_for_shap.empty:
-            first_row = df_scaled_for_shap.iloc[[0]]
-            for target_key, model_key in [('T1', 'T1'), ('T2', 'T2'), ('T3', 'T3')]:
-                shap_values = EXPLAINERS[model_key].shap_values(first_row)
-                shap_data_for_json[target_key] = {
-                    'shap_values': shap_values[0].tolist(),
-                    'expected_value': EXPLAINERS[model_key].expected_value.tolist() if isinstance(EXPLAINERS[model_key].expected_value, np.ndarray) else EXPLAINERS[model_key].expected_value,
-                    'feature_names': FEATURES
+            print("Calculando valores SHAP para todos os jogadores...")
+            
+            # Calcula os valores SHAP para todo o DataFrame de uma vez (mais eficiente)
+            shap_values_t1 = EXPLAINERS['T1'].shap_values(df_scaled_for_shap)
+            shap_values_t2 = EXPLAINERS['T2'].shap_values(df_scaled_for_shap)
+            shap_values_t3 = EXPLAINERS['T3'].shap_values(df_scaled_for_shap)
+
+            # Itera sobre cada jogador para estruturar o JSON de resposta
+            for i, jogador_id in enumerate(df_results['Código de Acesso']):
+                # Cria uma entrada para cada jogador usando seu ID como chave
+                shap_data_for_json[str(jogador_id)] = {
+                    'T1': {
+                        'shap_values': shap_values_t1[i].tolist(),
+                        'expected_value': EXPLAINERS['T1'].expected_value,
+                        'feature_names': FEATURES
+                    },
+                    'T2': {
+                        'shap_values': shap_values_t2[i].tolist(),
+                        'expected_value': EXPLAINERS['T2'].expected_value,
+                        'feature_names': FEATURES
+                    },
+                    'T3': {
+                        'shap_values': shap_values_t3[i].tolist(),
+                        'expected_value': EXPLAINERS['T3'].expected_value,
+                        'feature_names': FEATURES
+                    }
                 }
+            print("Cálculo SHAP concluído.")
 
     except Exception as e:
         print(f"ERRO CRÍTICO NO PIPELINE ML: {e}")
