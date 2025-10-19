@@ -57,18 +57,36 @@ def convert_df_to_excel(df):
 store = dcc.Store(id='session-store', storage_type='session', data={'logged_in': False, 'token': None, 'username': None, 'last_results': None})
 upload_data_store = dcc.Store(id='upload-data-store', storage_type='memory')
 
-auth_layout = dbc.Container([
-    dbc.Row(dbc.Col(dbc.Card([
-        dbc.CardBody([
-            html.H3("🎯 Bem-vindo ao Projeto Daruma", className="text-center mb-4"),
-            dbc.Alert(id='auth-message', color='danger', is_open=False),
-            dbc.RadioItems(id='auth-mode', options=[{'label': 'Login', 'value': 'login'}, {'label': 'Registrar', 'value': 'register'}], value='login', inline=True, className="mb-3"),
-            dbc.Input(id='username-input', placeholder='Usuário', type='text', className="mb-3"),
-            dbc.Input(id='password-input', placeholder='Senha', type='password', className="mb-3"),
-            dbc.Button("Acessar", id='auth-button', color='primary', n_clicks=0, className="w-100")
-        ])
-    ]), width={'size': 4, 'offset': 4}), justify="center")
-], fluid=True, className="vh-100 d-flex align-items-center")
+auth_layout = dbc.Container(
+    dbc.Row(
+        dbc.Col(
+            dbc.Card(
+                dbc.CardBody([
+                    html.H3("🎯 Bem-vindo ao Projeto Daruma", className="text-center mb-4"),
+                    dbc.Alert(id='auth-message', color='danger', is_open=False),
+                    dbc.RadioItems(
+                        id='auth-mode',
+                        options=[
+                            {'label': 'Login', 'value': 'login'},
+                            {'label': 'Registrar', 'value': 'register'}
+                        ],
+                        value='login',
+                        inline=True,
+                        className="mb-3 d-flex justify-content-center"
+                    ),
+                    dbc.Input(id='username-input', placeholder='Usuário', type='text', className="mb-3"),
+                    dbc.Input(id='password-input', placeholder='Senha', type='password', className="mb-3"),
+                    dbc.Button("Acessar", id='auth-button', color='primary', n_clicks=0, className="w-100")
+                ])
+            ),
+            width=4
+        ),
+        justify="center",
+        align="center",
+        className="vh-100"
+    ),
+    fluid=True
+)
 
 main_dashboard_layout = dbc.Container([
     dbc.Row([
@@ -242,11 +260,8 @@ def update_welcome_message(data):
     prevent_initial_call=True
 )
 def handle_logout(n_clicks, data):
-    if n_clicks > 0:
-        data['logged_in'] = False
-        data['token'] = None
-        data['username'] = None
-        data['last_results'] = None
+    if n_clicks:
+        data.update({'logged_in': False, 'token': None, 'username': None, 'last_results': None})
         return '/logout', data
     return dash.no_update, dash.no_update
 
@@ -271,8 +286,8 @@ def handle_upload(contents, filename):
     prevent_initial_call=True
 )
 def run_prediction(n_clicks, session_data, upload_data):
-    if not upload_data or not session_data.get('token'):
-        return dbc.Alert("Erro: arquivo ou sessão inválidos.", color="danger"), dash.no_update
+    if not n_clicks or not upload_data or not session_data.get('token'):
+        raise dash.exceptions.PreventUpdate
 
     headers = {'Authorization': f'Bearer {session_data["token"]}'}
     files = {'file': (upload_data['filename'], base64.b64decode(upload_data['contents']), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}
