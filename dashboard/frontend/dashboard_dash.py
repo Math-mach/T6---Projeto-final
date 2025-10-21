@@ -339,6 +339,7 @@ def load_history(n_clicks, data):
                 sort_action="native"
             )
         else:
+            print(f"Erro ao buscar histórico: {response.json().get('msg')}")
             return dbc.Alert(f"Erro ao buscar histórico: {response.json().get('msg')}", color="danger")
     except requests.exceptions.RequestException as e:
         return dbc.Alert(f"Erro de conexão com o backend: {e}", color="danger")

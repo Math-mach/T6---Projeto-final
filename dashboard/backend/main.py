@@ -10,6 +10,7 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 import crud
 import models
 import schemas
@@ -212,7 +213,7 @@ async def predict(file: UploadFile = File(...), user_id: str = Depends(auth.get_
 def get_history(user_id: str = Depends(auth.get_current_user_id), db: Session = Depends(database.get_db)):
     query = db.query(
         models.Prediction.upload_timestamp, 
-        db.func.count(models.Prediction.id).label('num_jogadores')
+        func.count(models.Prediction.id).label('num_jogadores')
     ).filter(models.Prediction.user_id == int(user_id)).group_by(models.Prediction.upload_timestamp).order_by(models.Prediction.upload_timestamp.desc()).all()
     return [{"timestamp": r.upload_timestamp.strftime("%Y-%m-%d %H:%M:%S"), "num_jogadores": r.num_jogadores} for r in query]
 
