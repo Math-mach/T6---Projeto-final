@@ -21,13 +21,23 @@ server = app.server # Para o Gunicorn
 # =============================================================================
 
 def login_api(username, password):
-    """Chama a API de login do backend."""
+    """Chama a API de login do backend FastAPI."""
     try:
-        response = requests.post(f"{BACKEND_URL}/login", json={'username': username, 'password': password})
-        return response.json().get('access_token'), None if response.status_code == 200 else response.json().get('msg', 'Erro desconhecido')
+        # ----> CORREÇÃO AQUI: Trocar 'json=' por 'data=' <----
+        # FastAPI com OAuth2PasswordRequestForm espera dados de formulário.
+        login_data = {'username': username, 'password': password}
+        response = requests.post(f"{BACKEND_URL}/login", data=login_data)
+        
+        if response.status_code == 200:
+            return response.json().get('access_token'), None
+        else:
+            # Tenta extrair a mensagem de erro detalhada do FastAPI
+            detail = response.json().get('detail', 'Erro desconhecido no login.')
+            return None, detail
+            
     except requests.exceptions.RequestException as e:
         return None, f"Erro de conexão com o backend: {e}"
-
+    
 def register_api(username, password):
     """Chama a API de registro do backend."""
     try:

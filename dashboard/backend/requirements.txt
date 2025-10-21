@@ -1,18 +1,13 @@
-Flask
-Flask-SQLAlchemy
-Flask-Bcrypt
-Flask-JWT-Extended
-pandas
-scikit-learn==1.6.1
-joblib
+fastapi
+uvicorn[standard]
+python-multipart
+sqlalchemy
 psycopg2-binary
+python-jose[cryptography]
+pandas
+scikit-learn==1.7.2 # Fixando a versão para consistência
+joblib
 openpyxl
 catboost
-optuna
-xgboost
-lightgbm
-xlsxwriter
 shap
-gunicorn
-scikit-learn
-numpy
+Flask-Bcrypt 
