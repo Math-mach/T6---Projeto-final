@@ -11,3 +11,6 @@ openpyxl
 catboost
 shap
 Flask-Bcrypt 
+optuna
+lightgbm
+xgboost
