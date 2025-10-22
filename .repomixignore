@@ -1,0 +1,28 @@
+# Arquivos de configuração de ambiente e exemplos
+dashboard/.env.example
+.env
+
+# Arquivos gerados pelo Git e editores
+.gitignore
+
+# Dados de treinamento e artefatos de ML (gerados pelos scripts)
+# É melhor ignorá-los se a lógica principal está nos scripts de exportação
+# e no notebook. O repomix já ignora binários como .pkl por padrão.
+dashboard/backend/ml_artifacts/
+*.pkl
+*.joblib
+
+# Dados brutos e intermediários (se existirem)
+notebooks/JogadoresV1.xlsx
+Dados_Otimizados_V4.xlsx
+Dados_para_modelo.xlsx
+
+# Arquivos de cache e logs do treinamento do CatBoost
+dashboard/backend/catboost_info/
+
+# Arquivos de cache do Python
+__pycache__/
+*.pyc
+
+# Pontos de verificação de notebooks
+.ipynb_checkpoints/
