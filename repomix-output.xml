@@ -44,13 +44,8 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
-dashboard/.env.example
-dashboard/.gitignore
+.repomixignore
 dashboard/backend/auth.py
-dashboard/backend/catboost_info/catboost_training.json
-dashboard/backend/catboost_info/learn_error.tsv
-dashboard/backend/catboost_info/test_error.tsv
-dashboard/backend/catboost_info/time_left.tsv
 dashboard/backend/core.py
 dashboard/backend/crud.py
 dashboard/backend/database.py
@@ -58,6 +53,9 @@ dashboard/backend/Dockerfile
 dashboard/backend/export_artifacts_target1.py
 dashboard/backend/export_artifacts_target2.py
 dashboard/backend/export_artifacts_target3.py
+dashboard/backend/export_hibrido_target1.py
+dashboard/backend/export_hibrido_target2.py
+dashboard/backend/export_hibrido_target3.py
 dashboard/backend/main.py
 dashboard/backend/models.py
 dashboard/backend/README.md
@@ -76,19 +74,35 @@ README.md
 <files>
 This section contains the contents of the repository's files.
 
-<file path="dashboard/.env.example">
-# Configurações do Banco de Dados
-POSTGRES_USER=teste
-POSTGRES_PASSWORD=senha
-POSTGRES_DB=banco
-DATABASE_URL=postgresql://teste:senha@db:5432/banco
+<file path=".repomixignore">
+# Arquivos de configuração de ambiente e exemplos
+dashboard/.env.example
+.env
 
-# Configurações do Backend (API)
-JWT_SECRET_KEY=chave
-ARTIFACTS_PATH=ml_artifacts
+# Arquivos gerados pelo Git e editores
+.gitignore
 
-# Configurações do Frontend (Dashboard)
-BACKEND_URL=http://backend:5000
+# Dados de treinamento e artefatos de ML (gerados pelos scripts)
+# É melhor ignorá-los se a lógica principal está nos scripts de exportação
+# e no notebook. O repomix já ignora binários como .pkl por padrão.
+dashboard/backend/ml_artifacts/
+*.pkl
+*.joblib
+
+# Dados brutos e intermediários (se existirem)
+notebooks/JogadoresV1.xlsx
+Dados_Otimizados_V4.xlsx
+Dados_para_modelo.xlsx
+
+# Arquivos de cache e logs do treinamento do CatBoost
+dashboard/backend/catboost_info/
+
+# Arquivos de cache do Python
+__pycache__/
+*.pyc
+
+# Pontos de verificação de notebooks
+.ipynb_checkpoints/
 </file>
 
 <file path="dashboard/backend/auth.py">
@@ -135,431 +149,6 @@ async def get_current_user_id(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     return user_id
-</file>
-
-<file path="dashboard/backend/catboost_info/test_error.tsv">
-iter	RMSE
-0	25.27549116
-1	24.97969294
-2	24.75456159
-3	24.51194365
-4	24.38225172
-5	24.12787827
-6	23.91928704
-7	23.66754286
-8	23.4334621
-9	23.21199358
-10	23.0331918
-11	22.83619183
-12	22.68735157
-13	22.53916285
-14	22.29171597
-15	22.11644426
-16	21.91412768
-17	21.7439361
-18	21.58507472
-19	21.42466009
-20	21.27062788
-21	21.09752165
-22	20.97221794
-23	20.86433564
-24	20.72001979
-25	20.63090677
-26	20.46352181
-27	20.36988348
-28	20.28931945
-29	20.16728168
-30	20.042857
-31	19.93828455
-32	19.82216225
-33	19.68304232
-34	19.56373157
-35	19.47478551
-36	19.3781258
-37	19.27391274
-38	19.14554136
-39	19.03884885
-40	18.94533357
-41	18.86627558
-42	18.80874328
-43	18.70532395
-44	18.61315862
-45	18.51798616
-46	18.44649305
-47	18.38049157
-48	18.30004472
-49	18.21069963
-50	18.13713001
-51	18.07071809
-52	17.99050376
-53	17.91860901
-54	17.85141721
-55	17.773811
-56	17.71671396
-57	17.65109718
-58	17.60219973
-59	17.5268905
-60	17.48329443
-61	17.4225171
-62	17.38009994
-63	17.34853435
-64	17.31892424
-65	17.25090277
-66	17.19611174
-67	17.12070234
-68	17.06622845
-69	17.02067502
-70	16.96310973
-71	16.9212477
-72	16.87512772
-73	16.8371429
-74	16.76971488
-75	16.72229732
-76	16.70152859
-77	16.67440677
-78	16.6263065
-79	16.60161336
-80	16.57994765
-81	16.52897102
-82	16.48943265
-83	16.46135847
-84	16.43916483
-85	16.41889888
-86	16.38953236
-87	16.35729888
-88	16.32478523
-89	16.32511955
-90	16.28553789
-91	16.25227545
-92	16.24188791
-93	16.22281181
-94	16.19853152
-95	16.15306934
-96	16.11919608
-97	16.08766485
-98	16.0351389
-99	16.02058721
-100	16.0195491
-101	15.9997705
-102	15.98222322
-103	15.95466424
-104	15.93745982
-105	15.93378941
-106	15.9233898
-107	15.90750373
-108	15.90412514
-109	15.87366819
-110	15.87186875
-111	15.86543757
-112	15.83946205
-113	15.82524123
-114	15.82472163
-115	15.81849585
-116	15.79405841
-117	15.78849185
-118	15.78380968
-119	15.73927948
-120	15.73845214
-121	15.70819756
-122	15.69429374
-123	15.66684895
-124	15.66055172
-125	15.64829484
-126	15.63223879
-127	15.61761542
-128	15.61927204
-129	15.59160799
-130	15.57709351
-131	15.55383466
-132	15.5384182
-133	15.52202201
-134	15.51954052
-135	15.51164474
-136	15.52237201
-137	15.52128614
-138	15.51773471
-139	15.50902918
-140	15.47238166
-141	15.45244731
-142	15.44237497
-143	15.43727622
-144	15.44902218
-145	15.45133666
-146	15.42595419
-147	15.39828052
-148	15.38615014
-149	15.38463178
-150	15.39263784
-151	15.37538171
-152	15.36971385
-153	15.3403291
-154	15.32993206
-155	15.33103574
-156	15.30944561
-157	15.30660845
-158	15.27740293
-159	15.27174401
-160	15.27457918
-161	15.25446384
-162	15.26410347
-163	15.24150549
-164	15.24347245
-165	15.2460141
-166	15.24312646
-167	15.24330635
-168	15.24569279
-169	15.23413664
-170	15.22226153
-171	15.20487889
-172	15.19320376
-173	15.18984074
-174	15.20040206
-175	15.20321262
-176	15.20127551
-177	15.19236874
-178	15.17806293
-179	15.16502992
-180	15.17278283
-181	15.17107947
-182	15.17622219
-183	15.1652808
-184	15.15695911
-185	15.14722656
-186	15.1440774
-187	15.13724972
-188	15.13612826
-189	15.13217479
-190	15.13107528
-191	15.1054437
-192	15.09809411
-193	15.10005902
-194	15.09169911
-195	15.08796265
-196	15.087214
-197	15.0751161
-198	15.07570355
-199	15.04713292
-200	15.04166592
-201	15.01810427
-202	15.03059235
-203	15.02249353
-204	15.01032112
-205	15.00281274
-206	15.01396729
-207	15.00781637
-208	14.99758332
-209	14.99741105
-210	14.9975543
-211	15.00853652
-212	15.00673677
-213	15.00696048
-214	15.00833471
-215	14.99790182
-216	14.99203332
-217	14.99224214
-218	14.99096961
-219	14.985912
-220	14.98693535
-221	14.96571146
-222	14.96375129
-223	14.95736828
-224	14.94820263
-225	14.943349
-226	14.93046585
-227	14.92859811
-228	14.92654725
-229	14.91340881
-230	14.90870987
-231	14.91959587
-232	14.91776326
-233	14.91450646
-234	14.91705579
-235	14.91439863
-236	14.9158503
-237	14.91136675
-238	14.90793491
-239	14.91223791
-240	14.90858633
-241	14.89027752
-242	14.89400616
-243	14.88033023
-244	14.88339813
-245	14.88852495
-246	14.87713476
-247	14.87407623
-248	14.87115536
-249	14.87188666
-250	14.87451136
-251	14.85790635
-252	14.84890386
-253	14.85279895
-254	14.84991679
-255	14.84708603
-256	14.84066676
-257	14.83674409
-258	14.82474626
-259	14.82100435
-260	14.82456801
-261	14.83176752
-262	14.83084461
-263	14.81487249
-264	14.81851774
-265	14.80624898
-266	14.8009422
-267	14.78536802
-268	14.78229779
-269	14.78460131
-270	14.78970674
-271	14.7763988
-272	14.77880198
-273	14.76776371
-274	14.76917708
-275	14.77293534
-276	14.77560882
-277	14.77126303
-278	14.77233895
-279	14.77701292
-280	14.77676927
-281	14.78768861
-282	14.78365458
-283	14.78188034
-284	14.77898655
-285	14.78181351
-286	14.78289766
-287	14.78396501
-288	14.78116678
-289	14.77882665
-290	14.77654487
-291	14.776981
-292	14.77982694
-293	14.7776047
-294	14.75996795
-295	14.75785801
-296	14.76071341
-297	14.76338905
-298	14.75474149
-299	14.75254737
-300	14.75040729
-301	14.74731097
-302	14.74655389
-303	14.74599209
-304	14.74527985
-305	14.74610431
-306	14.75445177
-307	14.74966278
-308	14.75470093
-309	14.75563405
-310	14.74985214
-311	14.74615221
-312	14.74308186
-313	14.74062515
-314	14.74485059
-315	14.75328688
-316	14.75190709
-317	14.74885609
-318	14.74437447
-319	14.73779399
-320	14.73890491
-321	14.74164319
-322	14.73796087
-323	14.73901037
-324	14.74004485
-325	14.73804403
-326	14.72941513
-327	14.73401014
-328	14.72937112
-329	14.73188311
-330	14.72663437
-331	14.72795024
-332	14.72894999
-333	14.73094614
-334	14.72295457
-335	14.72762986
-336	14.73646135
-337	14.73848207
-338	14.73247986
-339	14.73718516
-340	14.73617658
-341	14.74631006
-342	14.75040795
-343	14.74981487
-344	14.74527233
-345	14.7472927
-346	14.74883194
-347	14.74986839
-348	14.74685423
-349	14.74563486
-350	14.74673015
-351	14.74618368
-352	14.73900267
-353	14.7321237
-354	14.72964639
-355	14.73426531
-356	14.73628136
-357	14.74062965
-358	14.73118737
-359	14.73805612
-360	14.73613449
-361	14.7346878
-362	14.73932739
-363	14.73037474
-364	14.72188962
-365	14.72153137
-366	14.72055754
-367	14.72043348
-368	14.72922139
-369	14.72236971
-370	14.71579366
-371	14.71999379
-372	14.71914841
-373	14.72792398
-374	14.72211679
-375	14.72587736
-376	14.72502263
-377	14.72875457
-378	14.73022065
-379	14.7272337
-380	14.72685439
-381	14.72694937
-382	14.73603518
-383	14.72975001
-384	14.74084132
-385	14.74200696
-386	14.74040988
-387	14.73705475
-388	14.73644261
-389	14.73668787
-390	14.7356571
-391	14.73276483
-392	14.73630102
-393	14.73080069
-394	14.73341607
-395	14.73549225
-396	14.74191342
-397	14.73682745
-398	14.73562498
-399	14.73457108
-400	14.73376423
-401	14.73675999
-402	14.73786628
-403	14.73297135
-404	14.73217939
-405	14.73337878
-406	14.7322506
-407	14.72849587
-408	14.73504405
-409	14.73446448
-410	14.74304082
-411	14.74361134
-412	14.74351739
-413	14.74303353
-414	14.7436081
-415	14.75659394
-416	14.75952562
-417	14.75137545
-418	14.75355806
-419	14.75288973
-420	14.75523108
 </file>
 
 <file path="dashboard/backend/core.py">
@@ -1077,6 +666,775 @@ print(f"✅ Modelo Stacking para {TARGET} treinado.")
 joblib.dump(stacking_model, f'{ARTIFACTS_PATH}/modelo_{TARGET.lower()}.pkl') # <- NOME ALTERADO
 print(f"💾 Modelo para {TARGET} salvo em: {ARTIFACTS_PATH}/modelo_{TARGET.lower()}.pkl")
 print("\n--- Concluído para Target 3 ---")
+</file>
+
+<file path="dashboard/backend/export_hibrido_target1.py">
+# =============================================================================
+# EXPORT HÍBRIDO - TARGET 1 (R1)
+# =============================================================================
+# Este script replica a SEÇÃO 2 do notebook híbrido definitivo
+# Treina o modelo R1 e salva os artefatos necessários para a API
+
+import pandas as pd
+import numpy as np
+import warnings
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import RobustScaler
+from sklearn.feature_selection import VarianceThreshold
+from catboost import CatBoostRegressor
+import optuna
+import joblib
+import pickle
+import os
+
+warnings.filterwarnings('ignore')
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+# Configuração de caminhos
+ARTIFACTS_PATH = 'ml_artifacts'
+os.makedirs(ARTIFACTS_PATH, exist_ok=True)
+
+print("=" * 100)
+print("🎯 TREINAMENTO TARGET 1 (R1) - MODELO HÍBRIDO".center(100))
+print("=" * 100)
+
+# =============================================================================
+# CARREGAMENTO E PRÉ-PROCESSAMENTO
+# =============================================================================
+
+df_raw = pd.read_excel('JogadoresV3.xlsx')
+df = df_raw.copy()
+
+print(f"\n✅ Dados carregados: {len(df)} linhas")
+
+# Converter F0103
+if 'F0103' in df.columns:
+    df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
+
+# Identificar colunas P, T, F
+p_cols = [col for col in df.columns if col.startswith('P') and any(c.isdigit() for c in col)]
+t_cols = [col for col in df.columns if col.startswith('T') and any(c.isdigit() for c in col)]
+f_cols = [col for col in df.columns if col.startswith('F') and len(col) > 1 and any(c.isdigit() for c in col)]
+
+# Tratar colunas duplicadas
+print("\n[1/6] Tratando colunas duplicadas...")
+cols = pd.Series(df.columns)
+duplicated_cols = cols[cols.duplicated()].unique()
+
+if len(duplicated_cols) > 0:
+    for dup in duplicated_cols:
+        indices = cols[cols == dup].index.tolist()
+        for i, idx in enumerate(indices):
+            cols.iloc[idx] = f'{dup}_{i}'
+    df.columns = cols
+    # Atualizar listas de colunas
+    p_cols = [col for col in df.columns if col.startswith('P') and any(c.isdigit() for c in col)]
+    t_cols = [col for col in df.columns if col.startswith('T') and any(c.isdigit() for c in col)]
+    f_cols = [col for col in df.columns if col.startswith('F') and len(col) > 1 and any(c.isdigit() for c in col)]
+    print(f"  ✅ Colunas duplicadas renomeadas")
+else:
+    print("  ✅ Sem duplicatas")
+
+# Converter para numérico
+for col in p_cols + t_cols + f_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+# Remover outliers extremos
+numeric_cols = [col for col in df.select_dtypes(include=[np.number]).columns if 'Target' not in col]
+for col in numeric_cols:
+    if col in df.columns:
+        df.loc[df[col] < -100, col] = np.nan
+        if df[col].max() > 10000:
+            df.loc[df[col] > 10000, col] = np.nan
+
+# =============================================================================
+# FEATURE ENGINEERING
+# =============================================================================
+
+print("\n[2/6] Criando features comportamentais...")
+
+# Taxa de pulos (-1)
+p_minus_ones = sum((df[col] == -1).sum() for col in p_cols if col in df.columns)
+t_minus_ones = sum((df[col] == -1).sum() for col in t_cols if col in df.columns)
+
+df['taxa_pulos_P'] = p_minus_ones / len(p_cols) if len(p_cols) > 0 else 0
+df['taxa_pulos_T'] = t_minus_ones / len(t_cols) if len(t_cols) > 0 else 0
+df['taxa_pulos_geral'] = (p_minus_ones + t_minus_ones) / (len(p_cols) + len(t_cols))
+
+# Substituir -1 por NaN e preencher com mediana
+for col in p_cols + t_cols + f_cols:
+    if col in df.columns:
+        df[col] = df[col].replace(-1, np.nan)
+        df[col] = df[col].replace(-1.0, np.nan)
+        if df[col].isnull().sum() > 0:
+            df[col].fillna(df[col].median(), inplace=True)
+
+print("\n[3/6] Feature engineering avançado...")
+
+# Features de SONO
+if 'QtdHorasDormi' in df.columns and 'Acordar' in df.columns:
+    df['sono_total'] = df['QtdHorasDormi']
+    df['sono_x_acordar'] = df['QtdHorasDormi'] * df['Acordar']
+    df['sono_squared'] = df['QtdHorasDormi'] ** 2
+    df['sono_irregular'] = np.abs(df['QtdHorasDormi'] - df['QtdHorasDormi'].median())
+    print(f"  ✅ Sono: 4 features")
+
+# Features de PERFORMANCE
+if len(p_cols) > 0:
+    df['P_mean'] = df[p_cols].mean(axis=1)
+    df['P_std'] = df[p_cols].std(axis=1)
+    df['P_min'] = df[p_cols].min(axis=1)
+    df['P_max'] = df[p_cols].max(axis=1)
+    df['P_range'] = df['P_max'] - df['P_min']
+    df['P_late'] = df[['P09', 'P12', 'P13', 'P15']].mean(axis=1) if all(c in df.columns for c in ['P09', 'P12', 'P13', 'P15']) else 0
+    df['P_early'] = df[['P01', 'P02', 'P03', 'P04']].mean(axis=1) if all(c in df.columns for c in ['P01', 'P02', 'P03', 'P04']) else 0
+    print(f"  ✅ Performance: 7 features")
+
+# Features de TEMPO
+if len(t_cols) > 0:
+    df['T_mean'] = df[t_cols].mean(axis=1)
+    df['T_std'] = df[t_cols].std(axis=1)
+    df['T_min'] = df[t_cols].min(axis=1)
+    df['T_max'] = df[t_cols].max(axis=1)
+    print(f"  ✅ Tempo: 4 features")
+
+# Features de FORMULÁRIOS
+f_perfil = [c for c in f_cols if c.startswith('F01') or c.startswith('F02')]
+if len(f_perfil) > 0:
+    df['F_perfil_mean'] = df[f_perfil].mean(axis=1)
+    df['F_perfil_std'] = df[f_perfil].std(axis=1)
+
+f_sono = [c for c in f_cols if c.startswith('F07')]
+if len(f_sono) > 0:
+    df['F_sono_mean'] = df[f_sono].mean(axis=1)
+    df['F_sono_std'] = df[f_sono].std(axis=1)
+
+f_final = [c for c in f_cols if c.startswith('F11')]
+if len(f_final) > 0:
+    df['F_final_mean'] = df[f_final].mean(axis=1)
+    df['F_final_std'] = df[f_final].std(axis=1)
+
+df['F_mean_geral'] = df[f_cols].mean(axis=1)
+
+# =============================================================================
+# SELEÇÃO DE FEATURES
+# =============================================================================
+
+print("\n[4/6] Selecionando TOP features...")
+
+TARGET = 'Target1'
+feature_cols = [col for col in df.columns if col not in [TARGET, 'Código de Acesso', 'Data/Hora Último', 'Target2', 'Target3']
+                and pd.api.types.is_numeric_dtype(df[col])]
+
+X = df[feature_cols].fillna(0)
+y = df[TARGET]
+
+# Variance Threshold
+selector = VarianceThreshold(threshold=0.01)
+selector.fit(X)
+feature_cols = X.columns[selector.get_support()].tolist()
+X = df[feature_cols]
+
+# Correlação com target
+correlations = []
+for col in feature_cols:
+    corr = abs(df[col].corr(df[TARGET]))
+    if not np.isnan(corr):
+        correlations.append((col, corr))
+
+correlations.sort(key=lambda x: x[1], reverse=True)
+
+# TOP 30 features
+TOP_K = min(30, len(correlations))
+selected_features_r1 = [col for col, _ in correlations[:TOP_K]]
+
+print(f"  ✅ {TOP_K} features selecionadas")
+
+# Criar interações entre TOP 3
+top3_features = [col for col, _ in correlations[:3]]
+interaction_features = []
+
+for i, f1 in enumerate(top3_features):
+    for f2 in top3_features[i+1:]:
+        interaction_name = f'{f1}_X_{f2}'
+        df[interaction_name] = df[f1] * df[f2]
+        interaction_features.append(interaction_name)
+
+selected_features_r1.extend(interaction_features)
+selected_features_r1 = list(dict.fromkeys(selected_features_r1))
+
+print(f"  Total com interações: {len(selected_features_r1)}")
+
+# =============================================================================
+# PREPARAÇÃO DOS DADOS
+# =============================================================================
+
+print("\n[5/6] Preparando dados para treinamento...")
+
+# Scaler
+scaler_r1 = RobustScaler()
+X_final = df[selected_features_r1].copy().fillna(0)
+X_scaled = scaler_r1.fit_transform(X_final)
+
+X_r1 = X_scaled
+y_r1 = df[TARGET].values
+
+# Remover NaNs
+valid_idx = ~np.isnan(y_r1)
+X_r1 = X_r1[valid_idx]
+y_r1 = y_r1[valid_idx]
+
+# Split
+X_train_r1, X_test_r1, y_train_r1, y_test_r1 = train_test_split(X_r1, y_r1, test_size=0.25, random_state=42)
+
+print(f"  Treino: {len(X_train_r1)} | Teste: {len(X_test_r1)}")
+
+# =============================================================================
+# OTIMIZAÇÃO E TREINAMENTO
+# =============================================================================
+
+print("\n[6/6] Otimizando hiperparâmetros (100 trials)...")
+
+def objective_r1(trial):
+    params = {
+        'iterations': 500,
+        'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.1, log=True),
+        'depth': trial.suggest_int('depth', 3, 6),
+        'l2_leaf_reg': trial.suggest_float('l2_leaf_reg', 10, 100, log=True),
+        'border_count': trial.suggest_int('border_count', 32, 128),
+        'bagging_temperature': trial.suggest_float('bagging_temperature', 0.5, 1.0),
+        'random_strength': trial.suggest_float('random_strength', 0.5, 2.0),
+        'verbose': False,
+        'random_seed': 42
+    }
+    model = CatBoostRegressor(**params)
+    scores = cross_val_score(model, X_train_r1, y_train_r1, cv=5, scoring='r2')
+    return scores.mean()
+
+study_r1 = optuna.create_study(direction='maximize')
+study_r1.optimize(objective_r1, n_trials=100, show_progress_bar=True)
+
+best_params_r1 = study_r1.best_params
+best_params_r1['iterations'] = 500
+best_params_r1['verbose'] = False
+best_params_r1['random_seed'] = 42
+
+print(f"\n✅ Melhor R² CV: {study_r1.best_value:.4f}")
+
+# Treinar modelo final
+print("\n🔧 Treinando modelo final...")
+model_r1 = CatBoostRegressor(**best_params_r1)
+model_r1.fit(X_train_r1, y_train_r1, verbose=False)
+
+# =============================================================================
+# SALVAR ARTEFATOS
+# =============================================================================
+
+print("\n💾 Salvando artefatos...")
+
+# Salvar modelo
+joblib.dump(model_r1, f'{ARTIFACTS_PATH}/modelo_target1.pkl')
+print(f"  ✅ Modelo salvo: {ARTIFACTS_PATH}/modelo_target1.pkl")
+
+# Salvar scaler
+joblib.dump(scaler_r1, f'{ARTIFACTS_PATH}/scaler_target1.pkl')
+print(f"  ✅ Scaler salvo: {ARTIFACTS_PATH}/scaler_target1.pkl")
+
+# Salvar lista de features
+with open(f'{ARTIFACTS_PATH}/features_target1.pkl', 'wb') as f:
+    pickle.dump(selected_features_r1, f)
+print(f"  ✅ Features salvas: {ARTIFACTS_PATH}/features_target1.pkl")
+
+print("\n" + "=" * 100)
+print("✅ TARGET 1 (R1) - TREINAMENTO COMPLETO!".center(100))
+print("=" * 100)
+print(f"\n📦 Artefatos salvos em: {ARTIFACTS_PATH}/")
+print(f"  • modelo_target1.pkl")
+print(f"  • scaler_target1.pkl")
+print(f"  • features_target1.pkl")
+</file>
+
+<file path="dashboard/backend/export_hibrido_target2.py">
+# =============================================================================
+# EXPORT HÍBRIDO - TARGET 2 (R2)
+# =============================================================================
+# Este script replica a SEÇÃO 3 do notebook híbrido definitivo (CORRIGIDO!)
+# Treina o ENSEMBLE de 3 modelos R2 e salva os artefatos necessários para a API
+
+import pandas as pd
+import numpy as np
+import warnings
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import QuantileTransformer
+from sklearn.feature_selection import VarianceThreshold
+from catboost import CatBoostRegressor
+import optuna
+import joblib
+import pickle
+import os
+
+warnings.filterwarnings('ignore')
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+# Configuração de caminhos
+ARTIFACTS_PATH = 'ml_artifacts'
+os.makedirs(ARTIFACTS_PATH, exist_ok=True)
+
+print("=" * 100)
+print("🎯 TREINAMENTO TARGET 2 (R2) - ENSEMBLE HÍBRIDO CORRIGIDO".center(100))
+print("=" * 100)
+
+# =============================================================================
+# CARREGAMENTO E PRÉ-PROCESSAMENTO
+# =============================================================================
+
+df_raw = pd.read_excel('JogadoresV3.xlsx')
+df = df_raw.copy()
+
+TARGET = 'Target2'
+
+print(f"\n✅ Dados carregados: {len(df)} linhas")
+
+# Converter F0103
+if 'F0103' in df.columns:
+    df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
+
+# Identificar colunas P, T, F
+p_cols = [col for col in df.columns if col.startswith('P') and any(c.isdigit() for c in col)]
+t_cols = [col for col in df.columns if col.startswith('T') and any(c.isdigit() for c in col)]
+f_cols = [col for col in df.columns if col.startswith('F') and len(col) > 1 and any(c.isdigit() for c in col)]
+
+print("\n[1/5] Tratando valores -1 e NaN...")
+
+# Converter para numérico e tratar -1
+for col in p_cols + t_cols + f_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        df[col] = df[col].replace(-1, np.nan)
+        if df[col].isnull().sum() > 0:
+            df[col].fillna(df[col].median(), inplace=True)
+
+# =============================================================================
+# FEATURE ENGINEERING MINIMALISTA
+# =============================================================================
+
+print("\n[2/5] Criando features minimalistas para R2...")
+
+# Features de sono
+if 'QtdHorasDormi' in df.columns and 'Acordar' in df.columns:
+    df['sono_total'] = df['QtdHorasDormi']
+    df['acordar'] = df['Acordar']
+
+# Features de formulário sono
+f_sono = [c for c in f_cols if c.startswith('F07')]
+if len(f_sono) > 0:
+    df['F_sono_mean'] = df[f_sono].mean(axis=1)
+
+# Features de formulário final
+f_final = [c for c in f_cols if c.startswith('F11')]
+if len(f_final) > 0:
+    df['F_final_mean'] = df[f_final].mean(axis=1)
+
+# Features de performance
+p_cols_exist = [c for c in p_cols if c in df.columns]
+if len(p_cols_exist) > 0:
+    df['P_mean'] = df[p_cols_exist].mean(axis=1)
+
+# Preencher NaN remanescentes
+numeric_cols = df.select_dtypes(include=np.number).columns
+for col in numeric_cols:
+    if df[col].isnull().sum() > 0:
+        df[col].fillna(df[col].median(), inplace=True)
+
+# =============================================================================
+# SELEÇÃO DE FEATURES CONSERVADORA
+# =============================================================================
+
+print("\n[3/5] Seleção conservadora (≤12 features)...")
+
+feature_cols = [col for col in df.columns if col not in [TARGET, 'Código de Acesso', 'Data/Hora Último', 'Target1', 'Target3']
+                and pd.api.types.is_numeric_dtype(df[col])]
+
+X_pre = df[feature_cols].fillna(0)
+y = df[TARGET]
+
+# Variance Threshold
+selector = VarianceThreshold(threshold=0.01)
+selector.fit(X_pre)
+feature_cols_filtered = X_pre.columns[selector.get_support()].tolist()
+
+# Correlação com target
+correlations = []
+for col in feature_cols_filtered:
+    corr = df[col].corr(df[TARGET])
+    if not np.isnan(corr):
+        correlations.append((col, abs(corr)))
+
+correlations.sort(key=lambda x: x[1], reverse=True)
+
+# TOP 12 features
+MAX_FEATURES = 12
+selected_features_r2 = [col for col, _ in correlations[:MAX_FEATURES]]
+
+print(f"  ✅ {len(selected_features_r2)} features selecionadas")
+
+# Criar uma interação entre TOP 2
+if len(selected_features_r2) >= 2:
+    f1, f2 = selected_features_r2[0], selected_features_r2[1]
+    df[f'{f1}_X_{f2}'] = df[f1] * df[f2]
+    selected_features_r2.append(f'{f1}_X_{f2}')
+
+# =============================================================================
+# PREPARAÇÃO DOS DADOS
+# =============================================================================
+
+print("\n[4/5] Preparando dados...")
+
+X_r2 = df[selected_features_r2].copy()
+y_r2 = df[TARGET].values
+
+# Remover NaNs
+valid_idx = ~np.isnan(y_r2)
+X_r2 = X_r2[valid_idx]
+y_r2 = y_r2[valid_idx]
+
+print(f"  Dados: {len(X_r2)} amostras × {len(selected_features_r2)} features")
+
+# =============================================================================
+# OTIMIZAÇÃO
+# =============================================================================
+
+print("\n[5/5] Otimização brutal (150 trials)...")
+
+def objective_r2(trial):
+    params = {
+        'iterations': trial.suggest_int('iterations', 300, 700),
+        'learning_rate': trial.suggest_float('learning_rate', 0.001, 0.03, log=True),
+        'depth': trial.suggest_int('depth', 2, 3),
+        'l2_leaf_reg': trial.suggest_float('l2_leaf_reg', 50, 300, log=True),
+        'border_count': trial.suggest_int('border_count', 16, 48),
+        'bagging_temperature': trial.suggest_float('bagging_temperature', 0.0, 0.5),
+        'random_strength': trial.suggest_float('random_strength', 2.0, 5.0),
+        'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 5, 15),
+        'verbose': False,
+        'random_seed': 42
+    }
+
+    X_tr_opt, X_te_opt, y_tr_opt, y_te_opt = train_test_split(X_r2, y_r2, test_size=0.25, random_state=42)
+    scaler_temp = QuantileTransformer(output_distribution='normal', random_state=42)
+    X_tr_scaled = scaler_temp.fit_transform(X_tr_opt)
+
+    model = CatBoostRegressor(**params)
+    scores = cross_val_score(model, X_tr_scaled, y_tr_opt, cv=5, scoring='r2')
+    return scores.mean()
+
+study_r2 = optuna.create_study(direction='maximize')
+study_r2.optimize(objective_r2, n_trials=150, show_progress_bar=True)
+
+best_params_r2 = study_r2.best_params
+best_params_r2['verbose'] = False
+best_params_r2['random_seed'] = 42
+
+print(f"\n✅ Melhor R² CV: {study_r2.best_value:.4f}")
+
+# =============================================================================
+# TREINAMENTO DO ENSEMBLE (3 MODELOS) - VERSÃO CORRIGIDA
+# =============================================================================
+
+print("\n🚀 Treinando ensemble (3 modelos)...")
+print("  ✅ Cada modelo treina com seed diferente (diversidade)")
+
+# SPLIT BASE COMUM (para consistência do scaler)
+X_train_base, X_test_base, y_train_base, y_test_base = train_test_split(
+    X_r2, y_r2, test_size=0.25, random_state=42
+)
+
+# SCALER BASE COMUM
+scaler_base = QuantileTransformer(output_distribution='normal', random_state=42)
+X_train_base_scaled = scaler_base.fit_transform(X_train_base)
+X_test_base_scaled = scaler_base.transform(X_test_base)
+
+models_r2 = []
+
+for i, seed in enumerate([42, 123, 456], 1):
+    print(f"\n  Treinando Modelo {i} (seed={seed})...")
+    
+    # Cada modelo treina com seed diferente para diversidade
+    X_tr_div, X_te_div, y_tr_div, y_te_div = train_test_split(X_r2, y_r2, test_size=0.25, random_state=seed)
+    scaler_div = QuantileTransformer(output_distribution='normal', random_state=42)
+    X_tr_div_scaled = scaler_div.fit_transform(X_tr_div)
+    
+    # Treinar modelo
+    params_i = best_params_r2.copy()
+    params_i['random_seed'] = seed
+    model_i = CatBoostRegressor(**params_i)
+    model_i.fit(X_tr_div_scaled, y_tr_div, verbose=False)
+    
+    models_r2.append(model_i)
+    print(f"  ✅ Modelo {i} treinado!")
+
+# =============================================================================
+# SALVAR ARTEFATOS
+# =============================================================================
+
+print("\n💾 Salvando artefatos...")
+
+# Salvar os 3 modelos do ensemble
+for i, model in enumerate(models_r2):
+    joblib.dump(model, f'{ARTIFACTS_PATH}/modelo_target2_ensemble_{i}.pkl')
+    print(f"  ✅ Modelo {i+1} salvo: {ARTIFACTS_PATH}/modelo_target2_ensemble_{i}.pkl")
+
+# Salvar o scaler (QuantileTransformer)
+joblib.dump(scaler_base, f'{ARTIFACTS_PATH}/scaler_target2.pkl')
+print(f"  ✅ Scaler salvo: {ARTIFACTS_PATH}/scaler_target2.pkl")
+
+# Salvar a lista de features
+with open(f'{ARTIFACTS_PATH}/features_target2.pkl', 'wb') as f:
+    pickle.dump(selected_features_r2, f)
+print(f"  ✅ Features salvas: {ARTIFACTS_PATH}/features_target2.pkl")
+
+print("\n" + "=" * 100)
+print("✅ TARGET 2 (R2) - ENSEMBLE COMPLETO!".center(100))
+print("=" * 100)
+print(f"\n📦 Artefatos salvos em: {ARTIFACTS_PATH}/")
+print(f"  • modelo_target2_ensemble_0.pkl")
+print(f"  • modelo_target2_ensemble_1.pkl")
+print(f"  • modelo_target2_ensemble_2.pkl")
+print(f"  • scaler_target2.pkl (QuantileTransformer)")
+print(f"  • features_target2.pkl")
+print(f"\n💡 NOTA: A API fará a média das predições dos 3 modelos")
+</file>
+
+<file path="dashboard/backend/export_hibrido_target3.py">
+# =============================================================================
+# EXPORT HÍBRIDO - TARGET 3 (R3)
+# =============================================================================
+# Este script replica a SEÇÃO 4 do notebook híbrido definitivo (CORRIGIDO!)
+# Treina o ENSEMBLE de 3 modelos R3 e salva os artefatos necessários para a API
+
+import pandas as pd
+import numpy as np
+import warnings
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import RobustScaler
+from catboost import CatBoostRegressor
+import optuna
+import joblib
+import pickle
+import os
+
+warnings.filterwarnings('ignore')
+optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+# Configuração de caminhos
+ARTIFACTS_PATH = 'ml_artifacts'
+os.makedirs(ARTIFACTS_PATH, exist_ok=True)
+
+print("=" * 100)
+print("🎯 TREINAMENTO TARGET 3 (R3) - ENSEMBLE HÍBRIDO CORRIGIDO".center(100))
+print("=" * 100)
+
+# =============================================================================
+# CARREGAMENTO E PRÉ-PROCESSAMENTO
+# =============================================================================
+
+df_raw = pd.read_excel('JogadoresV3.xlsx')
+df = df_raw.copy()
+
+TARGET = 'Target3'
+
+print(f"\n✅ Dados carregados: {len(df)} linhas")
+
+# Converter F0103
+if 'F0103' in df.columns:
+    df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
+
+# Identificar colunas P, T, F
+p_cols = [col for col in df.columns if col.startswith('P') and any(c.isdigit() for c in col)]
+t_cols = [col for col in df.columns if col.startswith('T') and any(c.isdigit() for c in col)]
+f_cols = [col for col in df.columns if col.startswith('F') and len(col) > 1 and any(c.isdigit() for c in col)]
+
+print("\n[1/5] Tratando valores -1 e NaN...")
+
+# Converter para numérico e tratar -1
+for col in p_cols + t_cols + f_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        df[col] = df[col].replace(-1, np.nan)
+        if df[col].isnull().sum() > 0:
+            df[col].fillna(df[col].median(), inplace=True)
+
+# =============================================================================
+# FEATURE ENGINEERING
+# =============================================================================
+
+print("\n[2/5] Feature engineering para R3...")
+
+# Features de Performance
+df['P_mean'] = df[p_cols].mean(axis=1)
+df['P_std'] = df[p_cols].std(axis=1)
+df['P_late'] = df[['P09', 'P12', 'P13', 'P15']].mean(axis=1) if all(c in df.columns for c in ['P09', 'P12', 'P13', 'P15']) else 0
+df['P_early'] = df[['P01', 'P02', 'P03', 'P04']].mean(axis=1) if all(c in df.columns for c in ['P01', 'P02', 'P03', 'P04']) else 0
+
+# Features de Tempo
+df['T_mean'] = df[t_cols].mean(axis=1)
+df['T_std'] = df[t_cols].std(axis=1)
+
+# Features de Sono
+if 'QtdHorasSono' in df.columns:
+    f_sono = [c for c in f_cols if '07' in c]
+    df['F_sono_mean'] = df[f_sono].mean(axis=1)
+    df['F_sono_std'] = df[f_sono].std(axis=1)
+    df['F_sono_max'] = df[f_sono].max(axis=1)
+    if 'Acordar' in df.columns:
+        df['sono_x_acordar'] = df['QtdHorasSono'] * df['Acordar']
+        df['acordar_squared'] = df['Acordar'] ** 2
+
+# Features de Formulário Final
+f_final = [c for c in f_cols if '11' in c]
+df['F_final_mean'] = df[f_final].mean(axis=1)
+
+print("  ✅ Features criadas!")
+
+# =============================================================================
+# SELEÇÃO DE FEATURES
+# =============================================================================
+
+print("\n[3/5] Seleção TOP 15 features...")
+
+# Pool de features com correlação > 0.35
+feature_pool = []
+for col in df.columns:
+    if col not in [TARGET, 'Código de Acesso', 'Target1', 'Target2'] and df[col].dtype in ['float64', 'int64']:
+        corr = abs(df[col].corr(df[TARGET]))
+        if not np.isnan(corr) and corr > 0.35:
+            feature_pool.append((col, corr))
+
+feature_pool.sort(key=lambda x: x[1], reverse=True)
+selected_features_r3 = [f[0] for f in feature_pool[:15]]
+
+print(f"  ✅ {len(selected_features_r3)} features selecionadas")
+
+# Criar interação
+if 'F1103' in selected_features_r3 and 'P_mean' in selected_features_r3:
+    df['F1103_X_P_mean'] = df['F1103'] * df['P_mean']
+    selected_features_r3.append('F1103_X_P_mean')
+
+# =============================================================================
+# PREPARAÇÃO DOS DADOS
+# =============================================================================
+
+print("\n[4/5] Preparando dados...")
+
+X_r3 = df[selected_features_r3].fillna(df[selected_features_r3].median())
+y_r3 = df[TARGET].values
+
+print(f"  Dados: {len(X_r3)} amostras × {len(selected_features_r3)} features")
+
+# =============================================================================
+# OTIMIZAÇÃO
+# =============================================================================
+
+print("\n[5/5] Otimização (100 trials)...")
+
+def objective_r3(trial):
+    X_tr_opt, X_te_opt, y_tr_opt, y_te_opt = train_test_split(X_r3, y_r3, test_size=0.25, random_state=42)
+    scaler_temp = RobustScaler()
+    X_tr_scaled = scaler_temp.fit_transform(X_tr_opt)
+
+    params = {
+        'iterations': trial.suggest_int('iterations', 200, 800),
+        'learning_rate': trial.suggest_float('learning_rate', 0.005, 0.05, log=True),
+        'depth': 2,
+        'l2_leaf_reg': trial.suggest_float('l2_leaf_reg', 120, 180),
+        'border_count': trial.suggest_int('border_count', 16, 128),
+        'bagging_temperature': trial.suggest_float('bagging_temperature', 0, 1),
+        'random_strength': trial.suggest_float('random_strength', 0.5, 5),
+        'min_data_in_leaf': trial.suggest_int('min_data_in_leaf', 8, 15),
+        'random_seed': 42,
+        'verbose': False
+    }
+    model = CatBoostRegressor(**params)
+    scores = cross_val_score(model, X_tr_scaled, y_tr_opt, cv=3, scoring='r2')
+    return scores.mean()
+
+study_r3 = optuna.create_study(direction='maximize')
+study_r3.optimize(objective_r3, n_trials=100, show_progress_bar=True)
+
+best_params_r3 = study_r3.best_params
+best_params_r3['depth'] = 2
+best_params_r3['verbose'] = False
+best_params_r3['random_seed'] = 42
+
+print(f"\n✅ Melhor R² CV: {study_r3.best_value:.4f}")
+
+# =============================================================================
+# TREINAMENTO DO ENSEMBLE (3 MODELOS) - VERSÃO CORRIGIDA
+# =============================================================================
+
+print("\n🚀 Treinando ensemble (3 modelos)...")
+print("  ✅ Cada modelo treina com seed diferente (diversidade)")
+
+# SPLIT BASE COMUM (para consistência do scaler)
+X_train_base_r3, X_test_base_r3, y_train_base_r3, y_test_base_r3 = train_test_split(
+    X_r3, y_r3, test_size=0.25, random_state=42
+)
+
+# SCALER BASE COMUM
+scaler_base_r3 = RobustScaler()
+X_train_base_r3_scaled = scaler_base_r3.fit_transform(X_train_base_r3)
+X_test_base_r3_scaled = scaler_base_r3.transform(X_test_base_r3)
+
+models_r3 = []
+
+for i, seed in enumerate([42, 123, 456], 1):
+    print(f"\n  Treinando Modelo {i} (seed={seed})...")
+    
+    # Cada modelo treina com seed diferente para diversidade
+    X_tr_div, X_te_div, y_tr_div, y_te_div = train_test_split(X_r3, y_r3, test_size=0.25, random_state=seed)
+    scaler_div = RobustScaler()
+    X_tr_div_scaled = scaler_div.fit_transform(X_tr_div)
+    
+    # Treinar modelo
+    params_i = best_params_r3.copy()
+    params_i['random_seed'] = seed
+    model_i = CatBoostRegressor(**params_i)
+    model_i.fit(X_tr_div_scaled, y_tr_div, verbose=False)
+    
+    models_r3.append(model_i)
+    print(f"  ✅ Modelo {i} treinado!")
+
+# =============================================================================
+# SALVAR ARTEFATOS
+# =============================================================================
+
+print("\n💾 Salvando artefatos...")
+
+# Salvar os 3 modelos do ensemble
+for i, model in enumerate(models_r3):
+    joblib.dump(model, f'{ARTIFACTS_PATH}/modelo_target3_ensemble_{i}.pkl')
+    print(f"  ✅ Modelo {i+1} salvo: {ARTIFACTS_PATH}/modelo_target3_ensemble_{i}.pkl")
+
+# Salvar o scaler (RobustScaler)
+joblib.dump(scaler_base_r3, f'{ARTIFACTS_PATH}/scaler_target3.pkl')
+print(f"  ✅ Scaler salvo: {ARTIFACTS_PATH}/scaler_target3.pkl")
+
+# Salvar a lista de features
+with open(f'{ARTIFACTS_PATH}/features_target3.pkl', 'wb') as f:
+    pickle.dump(selected_features_r3, f)
+print(f"  ✅ Features salvas: {ARTIFACTS_PATH}/features_target3.pkl")
+
+print("\n" + "=" * 100)
+print("✅ TARGET 3 (R3) - ENSEMBLE COMPLETO!".center(100))
+print("=" * 100)
+print(f"\n📦 Artefatos salvos em: {ARTIFACTS_PATH}/")
+print(f"  • modelo_target3_ensemble_0.pkl")
+print(f"  • modelo_target3_ensemble_1.pkl")
+print(f"  • modelo_target3_ensemble_2.pkl")
+print(f"  • scaler_target3.pkl (RobustScaler)")
+print(f"  • features_target3.pkl")
+print(f"\n💡 NOTA: A API fará a média das predições dos 3 modelos")
 </file>
 
 <file path="dashboard/backend/models.py">
@@ -2205,1316 +2563,8 @@ A aplicação estará disponível nos seguintes endereços:
 }
 </file>
 
-<file path="dashboard/.gitignore">
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
-venv/
-.env
-
-# Notebooks
-.ipynb_checkpoints
-
-# Docker
-.dockerignore
-/db_data/
-!db_data/.gitkeep
-
-# Artefatos ML
-*.pkl
-*.joblib
-
-# Streamlit
-.streamlit/
-</file>
-
-<file path="dashboard/backend/catboost_info/catboost_training.json">
-{
-"meta":{"test_sets":[],"test_metrics":[],"learn_metrics":[{"best_value":"Min","name":"RMSE"}],"launch_mode":"Train","parameters":"","iteration_count":421,"learn_sets":["learn"],"name":"experiment"},
-"iterations":[
-{"learn":[19.96625332],"iteration":0,"passed_time":0.001738254158,"remaining_time":0.7300667463},
-{"learn":[17.75000673],"iteration":1,"passed_time":0.003294813759,"remaining_time":0.6902634826},
-{"learn":[16.49386468],"iteration":2,"passed_time":0.005509417766,"remaining_time":0.7676455,
-{",
-{"learn":[15.13460584],"iteration":3,"passed_time":0.008099808132,"remaining_time":0.8444049978},
-{"learn":[14.13567845],"iteration":4,"passed_time":0.01107211023,"remaining_time":0.9211995711},
-{"learn":[13.51760241],"iteration":5,"passed_time":0.01315810328,"remaining_time":0.9101021436},
-{"learn":[12.78202453],"iteration":6,"passed_time":0.01501276738,"remaining_time":0.8878979565},
-{"learn":[12.47807582],"iteration":7,"passed_time":0.01728696147,"remaining_time":0.8924393861},
-{"learn":[12.00894116],"iteration":8,"passed_time":0.01978509417,"remaining_time":0.9057176444},
-{"learn":[11.51477056],"iteration":9,"passed_time":0.02290657326,"remaining_time":0.941460161},
-{"learn":[11.2521877],"iteration":10,"passed_time":0.02536357254,"remaining_time":0.9453695221},
-{"learn":[11.02546439],"iteration":11,"passed_time":0.02733944158,"remaining_time":0.9318193005},
-{"learn":[10.59824288],"iteration":12,"passed_time":0.02934192796,"remaining_time":0.9208851237},
-{"learn":[10.41540771],"iteration":13,"passed_time":0.03137121657,"remaining_time":0.9120060818},
-{"learn":[10.24349747],"iteration":14,"passed_time":0.03354062709,"remaining_time":0.9078329733},
-{"learn":[9.886847246],"iteration":15,"passed_time":0.03583276241,"remaining_time":0.9070167984},
-{"learn":[9.562500485],"iteration":16,"passed_time":0.03886366424,"remaining_time":0.9235835502},
-{"learn":[9.24294726],"iteration":17,"passed_time":0.04129580605,"remaining_time":0.9245672132},
-{"learn":[8.793290828],"iteration":18,"passed_time":0.04343199381,"remaining_time":0.9189295533},
-{"learn":[8.437472171],"iteration":19,"passed_time":0.0454826642,"remaining_time":0.9119274172},
-{"learn":[8.122241991],"iteration":20,"passed_time":0.04711387973,"remaining_time":0.897407233},
-{"learn":[7.979077191],"iteration":21,"passed_time":0.04925274718,"remaining_time":0.8932657329},
-{"learn":[7.78701096],"iteration":22,"passed_time":0.05137226842,"remaining_time":0.8889636013},
-{"learn":[7.624097699],"iteration":23,"passed_time":0.05322976762,"remaining_time":0.8805090727},
-{"learn":[7.213772543],"iteration":24,"passed_time":0.0559254516,"remaining_time":0.8858591533},
-{"learn":[6.81701877],"iteration":25,"passed_time":0.05802286614,"remaining_time":0.8815012356},
-{"learn":[6.636914564],"iteration":26,"passed_time":0.05994362573,"remaining_time":0.8747329088},
-{"learn":[6.32423457],"iteration":27,"passed_time":0.0617381551,"remaining_time":0.8665391056},
-{"learn":[6.122721256],"iteration":28,"passed_time":0.0637035384,"remaining_time":0.8610961053},
-{"learn":[5.842081216],"iteration":29,"passed_time":0.06682786286,"remaining_time":0.8709898127},
-{"learn":[5.648066445],"iteration":30,"passed_time":0.07024795217,"remaining_time":0.8837645595},
-{"learn":[5.442668195],"iteration":31,"passed_time":0.07290563272,"remaining_time":0.8862590977},
-{"learn":[5.204549722],"iteration":32,"passed_time":0.0750104176,"remaining_time":0.8819406675},
-{"learn":[5.112186675],"iteration":33,"passed_time":0.07828661008,"remaining_time":0.8910858265},
-{"learn":[5.039488192],"iteration":34,"passed_time":0.08124302573,"remaining_time":0.8959945123},
-{"learn":[4.840636672],"iteration":35,"passed_time":0.08350636378,"remaining_time":0.8930541682},
-{"learn":[4.767152417],"iteration":36,"passed_time":0.08568334439,"remaining_time":0.8892541688},
-{"learn":[4.583549692],"iteration":37,"passed_time":0.0877519014,"remaining_time":0.8844467957},
-{"learn":[4.516753085],"iteration":38,"passed_time":0.09007872473,"remaining_time":0.8823095602},
-{"learn":[4.357649621],"iteration":39,"passed_time":0.09246720318,"remaining_time":0.8807501103},
-{"learn":[4.21863031],"iteration":40,"passed_time":0.09439993404,"remaining_time":0.8749262179},
-{"learn":[4.08804114],"iteration":41,"passed_time":0.09646080501,"remaining_time":0.8704439309},
-{"learn":[4.025560198],"iteration":42,"passed_time":0.09848589327,"remaining_time":0.8657597129},
-{"learn":[3.863658851],"iteration":43,"passed_time":0.1005501148,"remaining_time":0.8615316653},
-{"learn":[3.800234556],"iteration":44,"passed_time":0.1026743715,"remaining_time":0.8579014156},
-{"learn":[3.72018827],"iteration":45,"passed_time":0.1049252383,"remaining_time":0.8553687905},
-{"learn":[3.614661874],"iteration":46,"passed_time":0.1076876381,"remaining_time":0.856918652},
-{"learn":[3.421422187],"iteration":47,"passed_time":0.1095675792,"remaining_time":0.8514313964},
-{"learn":[3.304968444],"iteration":48,"passed_time":0.1123740375,"remaining_time":0.8531253457},
-{"learn":[3.24070032],"iteration":49,"passed_time":0.1147414642,"remaining_time":0.8513816642},
-{"learn":[3.148350246],"iteration":50,"passed_time":0.1169491225,"remaining_time":0.8484544179},
-{"learn":[3.116288471],"iteration":51,"passed_time":0.1193062483,"remaining_time":0.8466154929},
-{"learn":[3.024534968],"iteration":52,"passed_time":0.121360559,"remaining_time":0.8426544475},
-{"learn":[2.94613108],"iteration":53,"passed_time":0.1232111628,"remaining_time":0.8373795692},
-{"learn":[2.830382212],"iteration":54,"passed_time":0.1254255368,"remaining_time":0.8346499355},
-{"learn":[2.76262442],"iteration":55,"passed_time":0.1274486449,"remaining_time":0.8306920602},
-{"learn":[2.662009729],"iteration":56,"passed_time":0.129364394,"remaining_time":0.8261164812},
-{"learn":[2.612717891],"iteration":57,"passed_time":0.1315496356,"remaining_time":0.8233192711},
-{"learn":[2.519641238],"iteration":58,"passed_time":0.134658079,"remaining_time":0.8262071966},
-{"learn":[2.409810494],"iteration":59,"passed_time":0.1368687076,"remaining_time":0.8234933904},
-{"learn":[2.341254221],"iteration":60,"passed_time":0.1394559277,"remaining_time":0.8230185894},
-{"learn":[2.308865927],"iteration":61,"passed_time":0.1417962021,"remaining_time":0.8210457509},
-{"learn":[2.26657416],"iteration":62,"passed_time":0.1437643656,"remaining_time":0.8169467126},
-{"learn":[2.247476175],"iteration":63,"passed_time":0.1455631248,"remaining_time":0.8119693056},
-{"learn":[2.155292969],"iteration":64,"passed_time":0.1473557789,"remaining_time":0.807056266},
-{"learn":[2.111188579],"iteration":65,"passed_time":0.1494940766,"remaining_time":0.804096927},
-{"learn":[2.026583479],"iteration":66,"passed_time":0.1515263806,"remaining_time":0.8006020704},
-{"learn":[1.985517607],"iteration":67,"passed_time":0.1541264966,"remaining_time":0.8000978427},
-{"learn":[1.954484925],"iteration":68,"passed_time":0.1561043958,"remaining_time":0.7963586569},
-{"learn":[1.937313591],"iteration":69,"passed_time":0.1581685324,"remaining_time":0.7931022127},
-{"learn":[1.859913586],"iteration":70,"passed_time":0.160104143,"remaining_time":0.7892457754},
-{"learn":[1.762165816],"iteration":71,"passed_time":0.1619910301,"remaining_time":0.7852065207},
-{"learn":[1.698480416],"iteration":72,"passed_time":0.1643231487,"remaining_time":0.7833487088},
-{"learn":[1.656412196],"iteration":73,"passed_time":0.1669567424,"remaining_time":0.7828917514},
-{"learn":[1.616814205],"iteration":74,"passed_time":0.1685985388,"remaining_time":0.7778012589},
-{"learn":[1.584610283],"iteration":75,"passed_time":0.1706501695,"remaining_time":0.7746619537},
-{"learn":[1.531300813],"iteration":76,"passed_time":0.1730967928,"remaining_time":0.7733155419},
-{"learn":[1.50363053],"iteration":77,"passed_time":0.1751315619,"remaining_time":0.7701298169},
-{"learn":[1.476031219],"iteration":78,"passed_time":0.177020504,"remaining_time":0.7663419285},
-{"learn":[1.465633206],"iteration":79,"passed_time":0.1789899576,"remaining_time":0.7629446942},
-{"learn":[1.382091154],"iteration":80,"passed_time":0.1819738055,"remaining_time":0.7638406651},
-{"learn":[1.36305515],"iteration":81,"passed_time":0.1842054358,"remaining_time":0.7615322285},
-{"learn":[1.323691787],"iteration":82,"passed_time":0.1861990614,"remaining_time":0.7582564189},
-{"learn":[1.309756921],"iteration":83,"passed_time":0.1881191261,"remaining_time":0.7547160179},
-{"learn":[1.269201312],"iteration":84,"passed_time":0.189888538,"remaining_time":0.7506182208},
-{"learn":[1.245207896],"iteration":85,"passed_time":0.1921570968,"remaining_time":0.7485189234},
-{"learn":[1.200373347],"iteration":86,"passed_time":0.1942245585,"remaining_time":0.7456437075},
-{"learn":[1.180386648],"iteration":87,"passed_time":0.1966457197,"remaining_time":0.7441252803},
-{"learn":[1.168613615],"iteration":88,"passed_time":0.1984401585,"remaining_time":0.7402486813},
-{"learn":[1.154062529],"iteration":89,"passed_time":0.2000361011,"remaining_time":0.7356883275},
-{"learn":[1.118359698],"iteration":90,"passed_time":0.2017883967,"remaining_time":0.73176012},
-{"learn":[1.078875922],"iteration":91,"passed_time":0.2038081646,"remaining_time":0.7288357189},
-{"learn":[1.06048513],"iteration":92,"passed_time":0.2054172382,"remaining_time":0.7244823026},
-{"learn":[1.013668296],"iteration":93,"passed_time":0.2069413049,"remaining_time":0.7198915606},
-{"learn":[0.9913896275],"iteration":94,"passed_time":0.2088746552,"remaining_time":0.7167698696},
-{"learn":[0.9788959534],"iteration":95,"passed_time":0.2119678125,"remaining_time":0.7175993653},
-{"learn":[0.9564583905],"iteration":96,"passed_time":0.2143176126,"remaining_time":0.7158650154},
-{"learn":[0.941256532],"iteration":97,"passed_time":0.2166090181,"remaining_time":0.7139256415},
-{"learn":[0.9341582724],"iteration":98,"passed_time":0.2189197001,"remaining_time":0.712041853},
-{"learn":[0.8985897764],"iteration":99,"passed_time":0.2209304772,"remaining_time":0.7091868318},
-{"learn":[0.8760392764],"iteration":100,"passed_time":0.2232062512,"remaining_time":0.7071881225},
-{"learn":[0.8602061925],"iteration":101,"passed_time":0.2250046909,"remaining_time":0.703691141},
-{"learn":[0.841211356],"iteration":102,"passed_time":0.2277469084,"remaining_time":0.7031409406},
-{"learn":[0.8007210778],"iteration":103,"passed_time":0.2296918203,"remaining_time":0.7001183369},
-{"learn":[0.7652963383],"iteration":104,"passed_time":0.2321718912,"remaining_time":0.6987268346},
-{"learn":[0.7530954973],"iteration":105,"passed_time":0.2340215249,"remaining_time":0.6954413241},
-{"learn":[0.7203833558],"iteration":106,"passed_time":0.2358786692,"remaining_time":0.6922046929},
-{"learn":[0.700916808],"iteration":107,"passed_time":0.2379805439,"remaining_time":0.6897028725},
-{"learn":[0.6850799072],"iteration":108,"passed_time":0.2397556214,"remaining_time":0.6862729712},
-{"learn":[0.6814637731],"iteration":109,"passed_time":0.2420576675,"remaining_time":0.6843630417},
-{"learn":[0.6641328318],"iteration":110,"passed_time":0.2440800207,"remaining_time":0.6816649226},
-{"learn":[0.6436625513],"iteration":111,"passed_time":0.2461257606,"remaining_time":0.6790433932},
-{"learn":[0.6331629439],"iteration":112,"passed_time":0.2482911906,"remaining_time":0.6767582893},
-{"learn":[0.6093814115],"iteration":113,"passed_time":0.2500072931,"remaining_time":0.6732652543},
-{"learn":[0.585971639],"iteration":114,"passed_time":0.2518169384,"remaining_time":0.6700520273},
-{"learn":[0.554008242],"iteration":115,"passed_time":0.2536310242,"remaining_time":0.6668746758},
-{"learn":[0.5414931749],"iteration":116,"passed_time":0.2559995859,"remaining_time":0.6651613172},
-{"learn":[0.5171617481],"iteration":117,"passed_time":0.2595120626,"remaining_time":0.6663741947},
-{"learn":[0.4930040862],"iteration":118,"passed_time":0.2619349939,"remaining_time":0.6647425896},
-{"learn":[0.482957708],"iteration":119,"passed_time":0.2641966818,"remaining_time":0.6626933436},
-{"learn":[0.4762806376],"iteration":120,"passed_time":0.2665560079,"remaining_time":0.6608826642},
-{"learn":[0.4678101742],"iteration":121,"passed_time":0.2692335906,"remaining_time":0.6598429803},
-{"learn":[0.454229678],"iteration":122,"passed_time":0.2708583256,"remaining_time":0.6562258621},
-{"learn":[0.4399551026],"iteration":123,"passed_time":0.2724863209,"remaining_time":0.6526486879},
-{"learn":[0.4273286603],"iteration":124,"passed_time":0.2746540407,"remaining_time":0.6503807684},
-{"learn":[0.4176071886],"iteration":125,"passed_time":0.2765932919,"remaining_time":0.6475795325},
-{"learn":[0.4005910241],"iteration":126,"passed_time":0.278409353,"remaining_time":0.6445066912},
-{"learn":[0.395401225],"iteration":127,"passed_time":0.2800569099,"remaining_time":0.6410677703},
-{"learn":[0.3796021294],"iteration":128,"passed_time":0.2821311323,"remaining_time":0.6386224079},
-{"learn":[0.3663705914],"iteration":129,"passed_time":0.2840978857,"remaining_time":0.6359421902},
-{"learn":[0.3600757388],"iteration":130,"passed_time":0.2858512914,"remaining_time":0.6328005686},
-{"learn":[0.3548160633],"iteration":131,"passed_time":0.2878525976,"remaining_time":0.6302227327},
-{"learn":[0.3427233716],"iteration":132,"passed_time":0.2907563738,"remaining_time":0.6296077868},
-{"learn":[0.3328250487],"iteration":133,"passed_time":0.2928061741,"remaining_time":0.6271296415},
-{"learn":[0.3268765472],"iteration":134,"passed_time":0.294534928,"remaining_time":0.6239776993},
-{"learn":[0.3228941528],"iteration":135,"passed_time":0.2969215463,"remaining_time":0.6222252992},
-{"learn":[0.3075611543],"iteration":136,"passed_time":0.298975987,"remaining_time":0.6197750387},
-{"learn":[0.3006467611],"iteration":137,"passed_time":0.3007566049,"remaining_time":0.6167689797},
-{"learn":[0.2882546967],"iteration":138,"passed_time":0.3027409098,"remaining_time":0.6141937882},
-{"learn":[0.2721320052],"iteration":139,"passed_time":0.3052205658,"remaining_time":0.6126212786},
-{"learn":[0.2570531754],"iteration":140,"passed_time":0.3075275873,"remaining_time":0.6106930811},
-{"learn":[0.2478802441],"iteration":141,"passed_time":0.3095808676,"remaining_time":0.6082610004},
-{"learn":[0.2456477053],"iteration":142,"passed_time":0.311895385,"remaining_time":0.6063420772},
-{"learn":[0.2409691274],"iteration":143,"passed_time":0.3141042534,"remaining_time":0.6042144319},
-{"learn":[0.2374390485],"iteration":144,"passed_time":0.3166416345,"remaining_time":0.6027109733},
-{"learn":[0.2292420043],"iteration":145,"passed_time":0.3188608689,"remaining_time":0.6005941024},
-{"learn":[0.2221456241],"iteration":146,"passed_time":0.3214672555,"remaining_time":0.5991974694},
-{"learn":[0.216847822],"iteration":147,"passed_time":0.3234489501,"remaining_time":0.596632185},
-{"learn":[0.2114266673],"iteration":148,"passed_time":0.3259044242,"remaining_time":0.5949396199},
-{"learn":[0.2102303285],"iteration":149,"passed_time":0.3279594449,"remaining_time":0.5925133971},
-{"learn":[0.2015478937],"iteration":150,"passed_time":0.3299195178,"remaining_time":0.5899223165},
-{"learn":[0.1955526379],"iteration":151,"passed_time":0.3318501782,"remaining_time":0.5872874864},
-{"learn":[0.190023578],"iteration":152,"passed_time":0.3337317642,"remaining_time":0.5845759008},
-{"learn":[0.1859661496],"iteration":153,"passed_time":0.3357538122,"remaining_time":0.5821186225},
-{"learn":[0.180687815],"iteration":154,"passed_time":0.3372600674,"remaining_time":0.5787817931},
-{"learn":[0.177088388],"iteration":155,"passed_time":0.3391657057,"remaining_time":0.5761468719},
-{"learn":[0.1725820151],"iteration":156,"passed_time":0.3409188617,"remaining_time":0.5732648375},
-{"learn":[0.1675708611],"iteration":157,"passed_time":0.3431832898,"remaining_time":0.5712481343},
-{"learn":[0.1612331846],"iteration":158,"passed_time":0.3454286212,"remaining_time":0.5691968476},
-{"learn":[0.1602644854],"iteration":159,"passed_time":0.3470719329,"remaining_time":0.5661610906},
-{"learn":[0.1557963277],"iteration":160,"passed_time":0.3489284172,"remaining_time":0.5634868849},
-{"learn":[0.1549532242],"iteration":161,"passed_time":0.3509064515,"remaining_time":0.5610171046},
-{"learn":[0.1511681821],"iteration":162,"passed_time":0.3531173052,"remaining_time":0.5589218696},
-{"learn":[0.144692846],"iteration":163,"passed_time":0.3552843001,"remaining_time":0.5567564947},
-{"learn":[0.1402744201],"iteration":164,"passed_time":0.3572363372,"remaining_time":0.5542575898},
-{"learn":[0.1370773258],"iteration":165,"passed_time":0.3588857342,"remaining_time":0.5513003749},
-{"learn":[0.1344559881],"iteration":166,"passed_time":0.3605701745,"remaining_time":0.5484121216},
-{"learn":[0.130899658],"iteration":167,"passed_time":0.362598283,"remaining_time":0.5460557476},
-{"learn":[0.1256254681],"iteration":168,"passed_time":0.3644031081,"remaining_time":0.543370315},
-{"learn":[0.1233775965],"iteration":169,"passed_time":0.3659921501,"remaining_time":0.5403766451},
-{"learn":[0.1212258965],"iteration":170,"passed_time":0.3679875759,"remaining_time":0.537993532},
-{"learn":[0.1198124583],"iteration":171,"passed_time":0.3696811763,"remaining_time":0.535177982},
-{"learn":[0.1184647113],"iteration":172,"passed_time":0.3712728786,"remaining_time":0.5322293288},
-{"learn":[0.1167143269],"iteration":173,"passed_time":0.3734697611,"remaining_time":0.5301553506},
-{"learn":[0.1151905436],"iteration":174,"passed_time":0.3752808616,"remaining_time":0.5275376683},
-{"learn":[0.1134609768],"iteration":175,"passed_time":0.3773346823,"remaining_time":0.5252670293},
-{"learn":[0.1124611341],"iteration":176,"passed_time":0.3792072578,"remaining_time":0.5227489882},
-{"learn":[0.1089655029],"iteration":177,"passed_time":0.3809734146,"remaining_time":0.5200929199},
-{"learn":[0.1062984206],"iteration":178,"passed_time":0.3834993945,"remaining_time":0.5184740417},
-{"learn":[0.1039876961],"iteration":179,"passed_time":0.3854306849,"remaining_time":0.5160488615},
-{"learn":[0.1023142817],"iteration":180,"passed_time":0.3876981482,"remaining_time":0.5140748926},
-{"learn":[0.09900090077],"iteration":181,"passed_time":0.389331029,"remaining_time":0.5112643733},
-{"learn":[0.09713050374],"iteration":182,"passed_time":0.3913708585,"remaining_time":0.5089959799},
-{"learn":[0.09428982115],"iteration":183,"passed_time":0.3932381634,"remaining_time":0.5065078517},
-{"learn":[0.09054582049],"iteration":184,"passed_time":0.3950451335,"remaining_time":0.5039494676},
-{"learn":[0.08626985539],"iteration":185,"passed_time":0.3970919738,"remaining_time":0.501702225},
-{"learn":[0.08471253878],"iteration":186,"passed_time":0.3992329117,"remaining_time":0.4995748735},
-{"learn":[0.08253668291],"iteration":187,"passed_time":0.4013462822,"remaining_time":0.4974132114},
-{"learn":[0.08161121403],"iteration":188,"passed_time":0.4032208679,"remaining_time":0.494958949},
-{"learn":[0.07847224055],"iteration":189,"passed_time":0.4053206521,"remaining_time":0.4927845823},
-{"learn":[0.07612511893],"iteration":190,"passed_time":0.4074236972,"remaining_time":0.4906149233},
-{"learn":[0.07521281616],"iteration":191,"passed_time":0.4091281988,"remaining_time":0.4879706121},
-{"learn":[0.07476311236],"iteration":192,"passed_time":0.4109017561,"remaining_time":0.4854176187},
-{"learn":[0.07293238301],"iteration":193,"passed_time":0.4128171753,"remaining_time":0.4830386536},
-{"learn":[0.07125408927],"iteration":194,"passed_time":0.4148047704,"remaining_time":0.4807480929},
-{"learn":[0.06983662176],"iteration":195,"passed_time":0.4170001926,"remaining_time":0.4786992007},
-{"learn":[0.06845039887],"iteration":196,"passed_time":0.4193224358,"remaining_time":0.4767930234},
-{"learn":[0.06659346416],"iteration":197,"passed_time":0.4218965297,"remaining_time":0.4751662935},
-{"learn":[0.06560585863],"iteration":198,"passed_time":0.4242197027,"remaining_time":0.4732501206},
-{"learn":[0.06393725083],"iteration":199,"passed_time":0.4260962086,"remaining_time":0.4708363105},
-{"learn":[0.06255317937],"iteration":200,"passed_time":0.4281544196,"remaining_time":0.468626728},
-{"learn":[0.06174491076],"iteration":201,"passed_time":0.430987155,"remaining_time":0.4672583512},
-{"learn":[0.05969305629],"iteration":202,"passed_time":0.4330439559,"remaining_time":0.4650422778},
-{"learn":[0.05941386822],"iteration":203,"passed_time":0.4351893741,"remaining_time":0.4629220303},
-{"learn":[0.05735073163],"iteration":204,"passed_time":0.4373711052,"remaining_time":0.4608397986},
-{"learn":[0.05554141715],"iteration":205,"passed_time":0.4400505278,"remaining_time":0.4592760363},
-{"learn":[0.05393946539],"iteration":206,"passed_time":0.4421703642,"remaining_time":0.4571229852},
-{"learn":[0.05228253366],"iteration":207,"passed_time":0.44464798,"remaining_time":0.4553366334},
-{"learn":[0.05047493883],"iteration":208,"passed_time":0.4475946449,"remaining_time":0.4540194484},
-{"learn":[0.04898245032],"iteration":209,"passed_time":0.4500368778,"remaining_time":0.4521799105},
-{"learn":[0.04728582477],"iteration":210,"passed_time":0.452986288,"remaining_time":0.4508394335},
-{"learn":[0.04603347086],"iteration":211,"passed_time":0.4558914694,"remaining_time":0.449440175},
-{"learn":[0.04521422493],"iteration":212,"passed_time":0.4584235546,"remaining_time":0.4476624383},
-{"learn":[0.04472758666],"iteration":213,"passed_time":0.4634274955,"remaining_time":0.4482686522},
-{"learn":[0.04287569597],"iteration":214,"passed_time":0.4679775636,"remaining_time":0.4483878051},
-{"learn":[0.04261397084],"iteration":215,"passed_time":0.4721823132,"remaining_time":0.4481359917},
-{"learn":[0.04186442491],"iteration":216,"passed_time":0.4741850845,"remaining_time":0.4457776831},
-{"learn":[0.03960602861],"iteration":217,"passed_time":0.4763641807,"remaining_time":0.4435868288},
-{"learn":[0.03861589985],"iteration":218,"passed_time":0.4786029567,"remaining_time":0.441451129},
-{"learn":[0.03841643716],"iteration":219,"passed_time":0.4806075933,"remaining_time":0.4391005738},
-{"learn":[0.03698036135],"iteration":220,"passed_time":0.4826447625,"remaining_time":0.4367825905},
-{"learn":[0.03648347619],"iteration":221,"passed_time":0.4844372512,"remaining_time":0.4342478062},
-{"learn":[0.03587265171],"iteration":222,"passed_time":0.4862245497,"remaining_time":0.431715071},
-{"learn":[0.03445581875],"iteration":223,"passed_time":0.4888543385,"remaining_time":0.4299299316},
-{"learn":[0.03352377006],"iteration":224,"passed_time":0.4909392117,"remaining_time":0.4276626022},
-{"learn":[0.03323429959],"iteration":225,"passed_time":0.4930185547,"remaining_time":0.4253921158},
-{"learn":[0.03231445511],"iteration":226,"passed_time":0.4946066367,"remaining_time":0.4227034692},
-{"learn":[0.03115180611],"iteration":227,"passed_time":0.4963377605,"remaining_time":0.4201455604},
-{"learn":[0.03025066299],"iteration":228,"passed_time":0.4983470275,"remaining_time":0.4178280754},
-{"learn":[0.02973989434],"iteration":229,"passed_time":0.5003638448,"remaining_time":0.4155195407},
-{"learn":[0.02934044516],"iteration":230,"passed_time":0.5025558718,"remaining_time":0.4133576434},
-{"learn":[0.02862413685],"iteration":231,"passed_time":0.5047986884,"remaining_time":0.4112368625},
-{"learn":[0.02801155538],"iteration":232,"passed_time":0.5069335658,"remaining_time":0.4090279415},
-{"learn":[0.02720291252],"iteration":233,"passed_time":0.508885648,"remaining_time":0.4066735734},
-{"learn":[0.02703319775],"iteration":234,"passed_time":0.5126970144,"remaining_time":0.4057942327},
-{"learn":[0.02594220509],"iteration":235,"passed_time":0.5150624712,"remaining_time":0.4037565982},
-{"learn":[0.02515158517],"iteration":236,"passed_time":0.5172551331,"remaining_time":0.4015820443},
-{"learn":[0.02415234608],"iteration":237,"passed_time":0.5195233616,"remaining_time":0.3994654419},
-{"learn":[0.02357965431],"iteration":238,"passed_time":0.522040791,"remaining_time":0.3975373388},
-{"learn":[0.02302977857],"iteration":239,"passed_time":0.5243479424,"remaining_time":0.3954457399},
-{"learn":[0.02293764466],"iteration":240,"passed_time":0.5263382378,"remaining_time":0.3931156963},
-{"learn":[0.02228600572],"iteration":241,"passed_time":0.5288487564,"remaining_time":0.3911732537},
-{"learn":[0.02161110783],"iteration":242,"passed_time":0.5307479445,"remaining_time":0.3887783297},
-{"learn":[0.02100573578],"iteration":243,"passed_time":0.5336355644,"remaining_time":0.3871044873},
-{"learn":[0.02005186222],"iteration":244,"passed_time":0.5356672232,"remaining_time":0.384805842},
-{"learn":[0.01994630994],"iteration":245,"passed_time":0.5378641457,"remaining_time":0.3826269329},
-{"learn":[0.0198295118],"iteration":246,"passed_time":0.5404662319,"remaining_time":0.380733297},
-{"learn":[0.01916145237],"iteration":247,"passed_time":0.5427559522,"remaining_time":0.3786160473},
-{"learn":[0.01832107455],"iteration":248,"passed_time":0.5453788201,"remaining_time":0.3767275384},
-{"learn":[0.01785173293],"iteration":249,"passed_time":0.547222673,"remaining_time":0.3743003084},
-{"learn":[0.01730966946],"iteration":250,"passed_time":0.54977203,"remaining_time":0.3723555582},
-{"learn":[0.01704691122],"iteration":251,"passed_time":0.5518241005,"remaining_time":0.3700725118},
-{"learn":[0.01645495208],"iteration":252,"passed_time":0.5545448617,"remaining_time":0.3682353232},
-{"learn":[0.01592587593],"iteration":253,"passed_time":0.5569021976,"remaining_time":0.3661522323},
-{"learn":[0.01563593043],"iteration":254,"passed_time":0.5585047307,"remaining_time":0.3635756286},
-{"learn":[0.01547564022],"iteration":255,"passed_time":0.5604930957,"remaining_time":0.3612553156},
-{"learn":[0.01483816378],"iteration":256,"passed_time":0.5628694634,"remaining_time":0.3591851829},
-{"learn":[0.01428862657],"iteration":257,"passed_time":0.5654553031,"remaining_time":0.3572450171},
-{"learn":[0.01376019342],"iteration":258,"passed_time":0.567466115,"remaining_time":0.3549401955},
-{"learn":[0.01342932975],"iteration":259,"passed_time":0.569544388,"remaining_time":0.3526794095},
-{"learn":[0.01311554703],"iteration":260,"passed_time":0.5718546097,"remaining_time":0.3505622128},
-{"learn":[0.01296240631],"iteration":261,"passed_time":0.5743030531,"remaining_time":0.3485274254},
-{"learn":[0.0125833529],"iteration":262,"passed_time":0.5763547938,"remaining_time":0.3462511689},
-{"learn":[0.01243525645],"iteration":263,"passed_time":0.5789421285,"remaining_time":0.3442951295},
-{"learn":[0.01179815783],"iteration":264,"passed_time":0.5811596928,"remaining_time":0.3421166493},
-{"learn":[0.0114141738],"iteration":265,"passed_time":0.5854696312,"remaining_time":0.3411571159},
-{"learn":[0.0111061937],"iteration":266,"passed_time":0.588039475,"remaining_time":0.3391688357},
-{"learn":[0.0108413243],"iteration":267,"passed_time":0.5900951858,"remaining_time":0.3368826993},
-{"learn":[0.01064302463],"iteration":268,"passed_time":0.5924048177,"remaining_time":0.3347417557},
-{"learn":[0.01022376503],"iteration":269,"passed_time":0.5946450238,"remaining_time":0.3325607355},
-{"learn":[0.009958290547],"iteration":270,"passed_time":0.5968767892,"remaining_time":0.3303746066},
-{"learn":[0.009795744292],"iteration":271,"passed_time":0.5990532998,"remaining_time":0.3281578738},
-{"learn":[0.009427206245],"iteration":272,"passed_time":0.601592251,"remaining_time":0.3261379236},
-{"learn":[0.009295216743],"iteration":273,"passed_time":0.6040784976,"remaining_time":0.3240859093},
-{"learn":[0.00915078258],"iteration":274,"passed_time":0.6062395872,"remaining_time":0.3218581081},
-{"learn":[0.008928665651],"iteration":275,"passed_time":0.608701612,"remaining_time":0.3197888904},
-{"learn":[0.008544644876],"iteration":276,"passed_time":0.6109228863,"remaining_time":0.317591681},
-{"learn":[0.008357335801],"iteration":277,"passed_time":0.6133067144,"remaining_time":0.3154779142},
-{"learn":[0.008116493002],"iteration":278,"passed_time":0.615441242,"remaining_time":0.3132353275},
-{"learn":[0.007885659198],"iteration":279,"passed_time":0.6180032649,"remaining_time":0.311208787},
-{"learn":[0.007674441668],"iteration":280,"passed_time":0.6204743499,"remaining_time":0.3091331281},
-{"learn":[0.007495204368],"iteration":281,"passed_time":0.6238927742,"remaining_time":0.3075216157},
-{"learn":[0.007238668555],"iteration":282,"passed_time":0.6405240658,"remaining_time":0.3123403572},
-{"learn":[0.007075988716],"iteration":283,"passed_time":0.6445039068,"remaining_time":0.3109050536},
-{"learn":[0.006769883633],"iteration":284,"passed_time":0.6478218824,"remaining_time":0.3091360562},
-{"learn":[0.006684829198],"iteration":285,"passed_time":0.6500281858,"remaining_time":0.3068314863},
-{"learn":[0.006514917244],"iteration":286,"passed_time":0.652811247,"remaining_time":0.3047968888},
-{"learn":[0.00631561743],"iteration":287,"passed_time":0.6549496047,"remaining_time":0.302459366},
-{"learn":[0.006198336512],"iteration":288,"passed_time":0.6572489854,"remaining_time":0.3001967684},
-{"learn":[0.006037540675],"iteration":289,"passed_time":0.6595661731,"remaining_time":0.297941961},
-{"learn":[0.005940718021],"iteration":290,"passed_time":0.6618098595,"remaining_time":0.2956538891},
-{"learn":[0.005747877507],"iteration":291,"passed_time":0.6639227451,"remaining_time":0.293308336},
-{"learn":[0.005524502422],"iteration":292,"passed_time":0.666064393,"remaining_time":0.2909769362},
-{"learn":[0.005331510689],"iteration":293,"passed_time":0.6685622757,"remaining_time":0.2888007109},
-{"learn":[0.005258834305],"iteration":294,"passed_time":0.6714873788,"remaining_time":0.2868047787},
-{"learn":[0.005073639663],"iteration":295,"passed_time":0.6737545169,"remaining_time":0.2845247115},
-{"learn":[0.004935117395],"iteration":296,"passed_time":0.6759528198,"remaining_time":0.2822159921},
-{"learn":[0.004758900219],"iteration":297,"passed_time":0.6781048086,"remaining_time":0.2798888975},
-{"learn":[0.004589663657],"iteration":298,"passed_time":0.6807194756,"remaining_time":0.2777517593},
-{"learn":[0.004442423697],"iteration":299,"passed_time":0.6832259838,"remaining_time":0.2755678135},
-{"learn":[0.004308286083],"iteration":300,"passed_time":0.6855133939,"remaining_time":0.2732943763},
-{"learn":[0.004099038975],"iteration":301,"passed_time":0.6886703162,"remaining_time":0.271363469},
-{"learn":[0.003963773548],"iteration":302,"passed_time":0.6924415995,"remaining_time":0.2696637252},
-{"learn":[0.003852092488],"iteration":303,"passed_time":0.6947554218,"remaining_time":0.2673894222},
-{"learn":[0.003725255442],"iteration":304,"passed_time":0.6980523957,"remaining_time":0.26548878},
-{"learn":[0.003646973736],"iteration":305,"passed_time":0.7003369758,"remaining_time":0.2631985367},
-{"learn":[0.003607613565],"iteration":306,"passed_time":0.7022424341,"remaining_time":0.2607675488},
-{"learn":[0.003545451615],"iteration":307,"passed_time":0.7039417553,"remaining_time":0.2582643453},
-{"learn":[0.003481991088],"iteration":308,"passed_time":0.7056389463,"remaining_time":0.2557655728},
-{"learn":[0.003363073792],"iteration":309,"passed_time":0.707344168,"remaining_time":0.2532748473},
-{"learn":[0.00326187648],"iteration":310,"passed_time":0.710125624,"remaining_time":0.2511698349},
-{"learn":[0.003187563454],"iteration":311,"passed_time":0.7121429116,"remaining_time":0.2487935172},
-{"learn":[0.003144068521],"iteration":312,"passed_time":0.7150308616,"remaining_time":0.2467199139},
-{"learn":[0.003114449801],"iteration":313,"passed_time":0.71723691,"remaining_time":0.244408756},
-{"learn":[0.003050509749],"iteration":314,"passed_time":0.7204150741,"remaining_time":0.24242539},
-{"learn":[0.002926769098],"iteration":315,"passed_time":0.7227580887,"remaining_time":0.2401569599},
-{"learn":[0.002848435658],"iteration":316,"passed_time":0.7248778949,"remaining_time":0.2378148299},
-{"learn":[0.002807323788],"iteration":317,"passed_time":0.7268977324,"remaining_time":0.2354417184},
-{"learn":[0.002711240385],"iteration":318,"passed_time":0.7297375786,"remaining_time":0.2333330189},
-{"learn":[0.002633333956],"iteration":319,"passed_time":0.731574801,"remaining_time":0.2309032966},
-{"learn":[0.002611492325],"iteration":320,"passed_time":0.7342729255,"remaining_time":0.2287454597},
-{"learn":[0.002541183143],"iteration":321,"passed_time":0.7367968052,"remaining_time":0.2265306948},
-{"learn":[0.002503627209],"iteration":322,"passed_time":0.7392247769,"remaining_time":0.2242849168},
-{"learn":[0.002415959722],"iteration":323,"passed_time":0.7427481897,"remaining_time":0.2223659704},
-{"learn":[0.00235152868],"iteration":324,"passed_time":0.7456115873,"remaining_time":0.2202421919},
-{"learn":[0.002321185936],"iteration":325,"passed_time":0.749084291,"remaining_time":0.2182914345},
-{"learn":[0.002279457703],"iteration":326,"passed_time":0.7515946344,"remaining_time":0.2160547267},
-{"learn":[0.002242893277],"iteration":327,"passed_time":0.7547422162,"remaining_time":0.2139970308},
-{"learn":[0.002183647854],"iteration":328,"passed_time":0.7585484925,"remaining_time":0.2121169037},
-{"learn":[0.002137002324],"iteration":329,"passed_time":0.7614089702,"remaining_time":0.2099642918},
-{"learn":[0.002083792059],"iteration":330,"passed_time":0.7651617717,"remaining_time":0.2080500286},
-{"learn":[0.002053597556],"iteration":331,"passed_time":0.7680702634,"remaining_time":0.2058983537},
-{"learn":[0.002029373812],"iteration":332,"passed_time":0.7696691962,"remaining_time":0.2033960639},
-{"learn":[0.001971962474],"iteration":333,"passed_time":0.7725637619,"remaining_time":0.2012366685},
-{"learn":[0.001920465332],"iteration":334,"passed_time":0.7749299387,"remaining_time":0.198937238},
-{"learn":[0.001852780556],"iteration":335,"passed_time":0.7775792186,"remaining_time":0.1967090285},
-{"learn":[0.00179419283],"iteration":336,"passed_time":0.7803914322,"remaining_time":0.1945189327},
-{"learn":[0.001715011882],"iteration":337,"passed_time":0.782627168,"remaining_time":0.1921835945},
-{"learn":[0.001643025915],"iteration":338,"passed_time":0.7871274771,"remaining_time":0.1903966169},
-{"learn":[0.001589972813],"iteration":339,"passed_time":0.7914631222,"remaining_time":0.1885544497},
-{"learn":[0.001546977984],"iteration":340,"passed_time":0.7945175259,"remaining_time":0.1863970735},
-{"learn":[0.001509692566],"iteration":341,"passed_time":0.7972946618,"remaining_time":0.1841704043},
-{"learn":[0.001484961762],"iteration":342,"passed_time":0.8023539222,"remaining_time":0.1824594925},
-{"learn":[0.001432746083],"iteration":343,"passed_time":0.8046231407,"remaining_time":0.1801045984},
-{"learn":[0.001404039152],"iteration":344,"passed_time":0.8072115358,"remaining_time":0.1778205122},
-{"learn":[0.001370286806],"iteration":345,"passed_time":0.8089939539,"remaining_time":0.1753599611},
-{"learn":[0.001334643848],"iteration":346,"passed_time":0.8114220354,"remaining_time":0.1730410104},
-{"learn":[0.001296269699],"iteration":347,"passed_time":0.8140818166,"remaining_time":0.1707700362},
-{"learn":[0.001265048511],"iteration":348,"passed_time":0.8163661064,"remaining_time":0.1684193687},
-{"learn":[0.001223111415],"iteration":349,"passed_time":0.8190623902,"remaining_time":0.1661526563},
-{"learn":[0.001187443468],"iteration":350,"passed_time":0.8217780261,"remaining_time":0.1638873556},
-{"learn":[0.001167915923],"iteration":351,"passed_time":0.8245820988,"remaining_time":0.1616368319},
-{"learn":[0.001137232252],"iteration":352,"passed_time":0.8281134022,"remaining_time":0.1595232616},
-{"learn":[0.001117303702],"iteration":353,"passed_time":0.830601439,"remaining_time":0.1572042271},
-{"learn":[0.001089360856],"iteration":354,"passed_time":0.8336256705,"remaining_time":0.1549839275},
-{"learn":[0.001074669873],"iteration":355,"passed_time":0.8363766091,"remaining_time":0.1527092123},
-{"learn":[0.001066357495],"iteration":356,"passed_time":0.8396753729,"remaining_time":0.1505300388},
-{"learn":[0.001019766669],"iteration":357,"passed_time":0.8427463332,"remaining_time":0.1483045223},
-{"learn":[0.000981933984],"iteration":358,"passed_time":0.8456835672,"remaining_time":0.146051201},
-{"learn":[0.0009508461334],"iteration":359,"passed_time":0.8482371894,"remaining_time":0.1437290793},
-{"learn":[0.0009292138996],"iteration":360,"passed_time":0.8503267479,"remaining_time":0.1413285454},
-{"learn":[0.0009031747381],"iteration":361,"passed_time":0.8527529443,"remaining_time":0.1389845959},
-{"learn":[0.0008914789815],"iteration":362,"passed_time":0.8555841599,"remaining_time":0.1367049071},
-{"learn":[0.0008582589762],"iteration":363,"passed_time":0.8577326184,"remaining_time":0.1343152727},
-{"learn":[0.0008317507191],"iteration":364,"passed_time":0.8609478455,"remaining_time":0.1320906284},
-{"learn":[0.0008200482863],"iteration":365,"passed_time":0.8658639543,"remaining_time":0.130116168},
-{"learn":[0.000797108247],"iteration":366,"passed_time":0.8679266456,"remaining_time":0.127705828},
-{"learn":[0.0007767835307],"iteration":367,"passed_time":0.8701890639,"remaining_time":0.1253261424},
-{"learn":[0.0007731251916],"iteration":368,"passed_time":0.8728234728,"remaining_time":0.1229995138},
-{"learn":[0.0007482834088],"iteration":369,"passed_time":0.8755884725,"remaining_time":0.1206892219},
-{"learn":[0.0007160997356],"iteration":370,"passed_time":0.878098311,"remaining_time":0.1183420904},
-{"learn":[0.0006885861545],"iteration":371,"passed_time":0.8803337965,"remaining_time":0.1159579463},
-{"learn":[0.0006790337783],"iteration":372,"passed_time":0.8825578216,"remaining_time":0.1135731245},
-{"learn":[0.0006679077822],"iteration":373,"passed_time":0.8853901669,"remaining_time":0.1112656092},
-{"learn":[0.0006516586121],"iteration":374,"passed_time":0.8875869943,"remaining_time":0.108877338},
-{"learn":[0.0006292356663],"iteration":375,"passed_time":0.8922455211,"remaining_time":0.1067847033},
-{"learn":[0.0006110832474],"iteration":376,"passed_time":0.8946306696,"remaining_time":0.1044131285},
-{"learn":[0.0005934120447],"iteration":377,"passed_time":0.8965202366,"remaining_time":0.1019851063},
-{"learn":[0.0005868318008],"iteration":378,"passed_time":0.898694867,"remaining_time":0.0995915156},
-{"learn":[0.0005812375458],"iteration":379,"passed_time":0.9013950613,"remaining_time":0.09725578293},
-{"learn":[0.0005651811636],"iteration":380,"passed_time":0.9034261401,"remaining_time":0.09484788872},
-{"learn":[0.0005542701434],"iteration":381,"passed_time":0.9051190607,"remaining_time":0.09240744337},
-{"learn":[0.0005490969157],"iteration":382,"passed_time":0.9083696208,"remaining_time":0.09012544541},
-{"learn":[0.0005391978148],"iteration":383,"passed_time":0.9104375526,"remaining_time":0.08772445169},
-{"learn":[0.0005312510069],"iteration":384,"passed_time":0.9122540136,"remaining_time":0.085301674},
-{"learn":[0.0005250618945],"iteration":385,"passed_time":0.9139890277,"remaining_time":0.08287465277},
-{"learn":[0.0005027873024],"iteration":386,"passed_time":0.9163568842,"remaining_time":0.08050680636},
-{"learn":[0.000492588921],"iteration":387,"passed_time":0.9173792992,"remaining_time":0.07802452802},
-{"learn":[0.000484827574],"iteration":388,"passed_time":0.9196119449,"remaining_time":0.07564931167},
-{"learn":[0.0004741344339],"iteration":389,"passed_time":0.9212872144,"remaining_time":0.07323052217},
-{"learn":[0.0004600354132],"iteration":390,"passed_time":0.9229723544,"remaining_time":0.07081629318},
-{"learn":[0.0004503286792],"iteration":391,"passed_time":0.924709439,"remaining_time":0.06840962687},
-{"learn":[0.0004438196081],"iteration":392,"passed_time":0.9261973526,"remaining_time":0.06598861546},
-{"learn":[0.0004350081454],"iteration":393,"passed_time":0.9275793875,"remaining_time":0.06356508493},
-{"learn":[0.0004210665285],"iteration":394,"passed_time":0.9288360319,"remaining_time":0.06113857425},
-{"learn":[0.0004167641337],"iteration":395,"passed_time":0.9299794972,"remaining_time":0.05871082684},
-{"learn":[0.0004040905373],"iteration":396,"passed_time":0.9316909742,"remaining_time":0.05632388761},
-{"learn":[0.000400218414],"iteration":397,"passed_time":0.9346941189,"remaining_time":0.05401498677},
-{"learn":[0.0003817261284],"iteration":398,"passed_time":0.9362215558,"remaining_time":0.05162123867},
-{"learn":[0.0003750523696],"iteration":399,"passed_time":0.9393134627,"remaining_time":0.04931395679},
-{"learn":[0.0003622141334],"iteration":400,"passed_time":0.9409617397,"remaining_time":0.04693076008},
-{"learn":[0.0003589416159],"iteration":401,"passed_time":0.9443321346,"remaining_time":0.04463261332},
-{"learn":[0.0003477000211],"iteration":402,"passed_time":0.9491629559,"remaining_time":0.0423943752},
-{"learn":[0.000337273524],"iteration":403,"passed_time":0.9510307211,"remaining_time":0.04001861945},
-{"learn":[0.0003307327407],"iteration":404,"passed_time":0.953532309,"remaining_time":0.03767041221},
-{"learn":[0.0003273503781],"iteration":405,"passed_time":0.9548645897,"remaining_time":0.03527824839},
-{"learn":[0.0003248989732],"iteration":406,"passed_time":0.956276087,"remaining_time":0.03289401773},
-{"learn":[0.0003109911402],"iteration":407,"passed_time":0.9576029372,"remaining_time":0.03051185829},
-{"learn":[0.0002981986777],"iteration":408,"passed_time":0.9586718657,"remaining_time":0.0281272919},
-{"learn":[0.0002913603977],"iteration":409,"passed_time":0.9599700339,"remaining_time":0.02575529359},
-{"learn":[0.0002865105128],"iteration":410,"passed_time":0.9610612843,"remaining_time":0.02338348624},
-{"learn":[0.0002741611685],"iteration":411,"passed_time":0.9621708567,"remaining_time":0.02101829541},
-{"learn":[0.0002656264072],"iteration":412,"passed_time":0.9631103445,"remaining_time":0.01865589045},
-{"learn":[0.0002592773217],"iteration":413,"passed_time":0.9647648717,"remaining_time":0.01631244952},
-{"learn":[0.0002536340979],"iteration":414,"passed_time":0.9659394696,"remaining_time":0.01396538992},
-{"learn":[0.0002480115117],"iteration":415,"passed_time":0.9670334605,"remaining_time":0.01162299832},
-{"learn":[0.0002457103716],"iteration":416,"passed_time":0.9680477448,"remaining_time":0.009285829686},
-{"learn":[0.0002347267271],"iteration":417,"passed_time":0.9691010123,"remaining_time":0.006955270423},
-{"learn":[0.0002305258018],"iteration":418,"passed_time":0.9701608801,"remaining_time":0.004630839523},
-{"learn":[0.0002248826691],"iteration":419,"passed_time":0.9712932644,"remaining_time":0.002312603011},
-{"learn":[0.0002185328223],"iteration":420,"passed_time":0.9722734759,"remaining_time":0}
-]}0}
-]}
-</file>
-
-<file path="dashboard/backend/catboost_info/learn_error.tsv">
-iter	RMSE
-0	19.96625332
-1	17.75000673
-2	16.49386468
-3	15.13460584
-4	14.13567845
-5	13.51760241
-6	12.78202453
-7	12.47807582
-8	12.00894116
-9	11.51477056
-10	11.2521877
-11	11.02546439
-12	10.59824288
-13	10.41540771
-14	10.24349747
-15	9.886847246
-16	9.562500485
-17	9.24294726
-18	8.793290828
-19	8.437472171
-20	8.122241991
-21	7.979077191
-22	7.78701096
-23	7.624097699
-24	7.213772543
-25	6.81701877
-26	6.636914564
-27	6.32423457
-28	6.122721256
-29	5.842081216
-30	5.648066445
-31	5.442668195
-32	5.204549722
-33	5.112186675
-34	5.039488192
-35	4.840636672
-36	4.767152417
-37	4.583549692
-38	4.516753085
-39	4.357649621
-40	4.21863031
-41	4.08804114
-42	4.025560198
-43	3.863658851
-44	3.800234556
-45	3.72018827
-46	3.614661874
-47	3.421422187
-48	3.304968444
-49	3.24070032
-50	3.148350246
-51	3.116288471
-52	3.024534968
-53	2.94613108
-54	2.830382212
-55	2.76262442
-56	2.662009729
-57	2.612717891
-58	2.519641238
-59	2.409810494
-60	2.341254221
-61	2.308865927
-62	2.26657416
-63	2.247476175
-64	2.155292969
-65	2.111188579
-66	2.026583479
-67	1.985517607
-68	1.954484925
-69	1.937313591
-70	1.859913586
-71	1.762165816
-72	1.698480416
-73	1.656412196
-74	1.616814205
-75	1.584610283
-76	1.531300813
-77	1.50363053
-78	1.476031219
-79	1.465633206
-80	1.382091154
-81	1.36305515
-82	1.323691787
-83	1.309756921
-84	1.269201312
-85	1.245207896
-86	1.200373347
-87	1.180386648
-88	1.168613615
-89	1.154062529
-90	1.118359698
-91	1.078875922
-92	1.06048513
-93	1.013668296
-94	0.9913896275
-95	0.9788959534
-96	0.9564583905
-97	0.941256532
-98	0.9341582724
-99	0.8985897764
-100	0.8760392764
-101	0.8602061925
-102	0.841211356
-103	0.8007210778
-104	0.7652963383
-105	0.7530954973
-106	0.7203833558
-107	0.700916808
-108	0.6850799072
-109	0.6814637731
-110	0.6641328318
-111	0.6436625513
-112	0.6331629439
-113	0.6093814115
-114	0.585971639
-115	0.554008242
-116	0.5414931749
-117	0.5171617481
-118	0.4930040862
-119	0.482957708
-120	0.4762806376
-121	0.4678101742
-122	0.454229678
-123	0.4399551026
-124	0.4273286603
-125	0.4176071886
-126	0.4005910241
-127	0.395401225
-128	0.3796021294
-129	0.3663705914
-130	0.3600757388
-131	0.3548160633
-132	0.3427233716
-133	0.3328250487
-134	0.3268765472
-135	0.3228941528
-136	0.3075611543
-137	0.3006467611
-138	0.2882546967
-139	0.2721320052
-140	0.2570531754
-141	0.2478802441
-142	0.2456477053
-143	0.2409691274
-144	0.2374390485
-145	0.2292420043
-146	0.2221456241
-147	0.216847822
-148	0.2114266673
-149	0.2102303285
-150	0.2015478937
-151	0.1955526379
-152	0.190023578
-153	0.1859661496
-154	0.180687815
-155	0.177088388
-156	0.1725820151
-157	0.1675708611
-158	0.1612331846
-159	0.1602644854
-160	0.1557963277
-161	0.1549532242
-162	0.1511681821
-163	0.144692846
-164	0.1402744201
-165	0.1370773258
-166	0.1344559881
-167	0.130899658
-168	0.1256254681
-169	0.1233775965
-170	0.1212258965
-171	0.1198124583
-172	0.1184647113
-173	0.1167143269
-174	0.1151905436
-175	0.1134609768
-176	0.1124611341
-177	0.1089655029
-178	0.1062984206
-179	0.1039876961
-180	0.1023142817
-181	0.09900090077
-182	0.09713050374
-183	0.09428982115
-184	0.09054582049
-185	0.08626985539
-186	0.08471253878
-187	0.08253668291
-188	0.08161121403
-189	0.07847224055
-190	0.07612511893
-191	0.07521281616
-192	0.07476311236
-193	0.07293238301
-194	0.07125408927
-195	0.06983662176
-196	0.06845039887
-197	0.06659346416
-198	0.06560585863
-199	0.06393725083
-200	0.06255317937
-201	0.06174491076
-202	0.05969305629
-203	0.05941386822
-204	0.05735073163
-205	0.05554141715
-206	0.05393946539
-207	0.05228253366
-208	0.05047493883
-209	0.04898245032
-210	0.04728582477
-211	0.04603347086
-212	0.04521422493
-213	0.04472758666
-214	0.04287569597
-215	0.04261397084
-216	0.04186442491
-217	0.03960602861
-218	0.03861589985
-219	0.03841643716
-220	0.03698036135
-221	0.03648347619
-222	0.03587265171
-223	0.03445581875
-224	0.03352377006
-225	0.03323429959
-226	0.03231445511
-227	0.03115180611
-228	0.03025066299
-229	0.02973989434
-230	0.02934044516
-231	0.02862413685
-232	0.02801155538
-233	0.02720291252
-234	0.02703319775
-235	0.02594220509
-236	0.02515158517
-237	0.02415234608
-238	0.02357965431
-239	0.02302977857
-240	0.02293764466
-241	0.02228600572
-242	0.02161110783
-243	0.02100573578
-244	0.02005186222
-245	0.01994630994
-246	0.0198295118
-247	0.01916145237
-248	0.01832107455
-249	0.01785173293
-250	0.01730966946
-251	0.01704691122
-252	0.01645495208
-253	0.01592587593
-254	0.01563593043
-255	0.01547564022
-256	0.01483816378
-257	0.01428862657
-258	0.01376019342
-259	0.01342932975
-260	0.01311554703
-261	0.01296240631
-262	0.0125833529
-263	0.01243525645
-264	0.01179815783
-265	0.0114141738
-266	0.0111061937
-267	0.0108413243
-268	0.01064302463
-269	0.01022376503
-270	0.009958290547
-271	0.009795744292
-272	0.009427206245
-273	0.009295216743
-274	0.00915078258
-275	0.008928665651
-276	0.008544644876
-277	0.008357335801
-278	0.008116493002
-279	0.007885659198
-280	0.007674441668
-281	0.007495204368
-282	0.007238668555
-283	0.007075988716
-284	0.006769883633
-285	0.006684829198
-286	0.006514917244
-287	0.00631561743
-288	0.006198336512
-289	0.006037540675
-290	0.005940718021
-291	0.005747877507
-292	0.005524502422
-293	0.005331510689
-294	0.005258834305
-295	0.005073639663
-296	0.004935117395
-297	0.004758900219
-298	0.004589663657
-299	0.004442423697
-300	0.004308286083
-301	0.004099038975
-302	0.003963773548
-303	0.003852092488
-304	0.003725255442
-305	0.003646973736
-306	0.003607613565
-307	0.003545451615
-308	0.003481991088
-309	0.003363073792
-310	0.00326187648
-311	0.003187563454
-312	0.003144068521
-313	0.003114449801
-314	0.003050509749
-315	0.002926769098
-316	0.002848435658
-317	0.002807323788
-318	0.002711240385
-319	0.002633333956
-320	0.002611492325
-321	0.002541183143
-322	0.002503627209
-323	0.002415959722
-324	0.00235152868
-325	0.002321185936
-326	0.002279457703
-327	0.002242893277
-328	0.002183647854
-329	0.002137002324
-330	0.002083792059
-331	0.002053597556
-332	0.002029373812
-333	0.001971962474
-334	0.001920465332
-335	0.001852780556
-336	0.00179419283
-337	0.001715011882
-338	0.001643025915
-339	0.001589972813
-340	0.001546977984
-341	0.001509692566
-342	0.001484961762
-343	0.001432746083
-344	0.001404039152
-345	0.001370286806
-346	0.001334643848
-347	0.001296269699
-348	0.001265048511
-349	0.001223111415
-350	0.001187443468
-351	0.001167915923
-352	0.001137232252
-353	0.001117303702
-354	0.001089360856
-355	0.001074669873
-356	0.001066357495
-357	0.001019766669
-358	0.000981933984
-359	0.0009508461334
-360	0.0009292138996
-361	0.0009031747381
-362	0.0008914789815
-363	0.0008582589762
-364	0.0008317507191
-365	0.0008200482863
-366	0.000797108247
-367	0.0007767835307
-368	0.0007731251916
-369	0.0007482834088
-370	0.0007160997356
-371	0.0006885861545
-372	0.0006790337783
-373	0.0006679077822
-374	0.0006516586121
-375	0.0006292356663
-376	0.0006110832474
-377	0.0005934120447
-378	0.0005868318008
-379	0.0005812375458
-380	0.0005651811636
-381	0.0005542701434
-382	0.0005490969157
-383	0.0005391978148
-384	0.0005312510069
-385	0.0005250618945
-386	0.0005027873024
-387	0.000492588921
-388	0.000484827574
-389	0.0004741344339
-390	0.0004600354132
-391	0.0004503286792
-392	0.0004438196081
-393	0.0004350081454
-394	0.0004210665285
-395	0.0004167641337
-396	0.0004040905373
-397	0.000400218414
-398	0.0003817261284
-399	0.0003750523696
-400	0.0003622141334
-401	0.0003589416159
-402	0.0003477000211
-403	0.000337273524
-404	0.0003307327407
-405	0.0003273503781
-406	0.0003248989732
-407	0.0003109911402
-408	0.0002981986777
-409	0.0002913603977
-410	0.0002865105128
-411	0.0002741611685
-412	0.0002656264072
-413	0.0002592773217
-414	0.0002536340979
-415	0.0002480115117
-416	0.0002457103716
-417	0.0002347267271
-418	0.0002305258018
-419	0.0002248826691
-420	0.0002185328223
-65
-</file>
-
-<file path="dashboard/backend/catboost_info/time_left.tsv">
-iter	Passed	Remaining
-0	1	730
-1	3	690
-2	5	767
-3	8	844
-4	11	921
-5	13	910
-6	15	887
-7	17	892
-8	19	905
-9	22	941
-10	25	945
-11	27	931
-12	29	920
-13	31	912
-14	33	907
-15	35	907
-16	38	923
-17	41	924
-18	43	918
-19	45	911
-20	47	897
-21	49	893
-22	51	888
-23	53	880
-24	55	885
-25	58	881
-26	59	874
-27	61	866
-28	63	861
-29	66	870
-30	70	883
-31	72	886
-32	75	881
-33	78	891
-34	81	895
-35	83	893
-36	85	889
-37	87	884
-38	90	882
-39	92	880
-40	94	874
-41	96	870
-42	98	865
-43	100	861
-44	102	857
-45	104	855
-46	107	856
-47	109	851
-48	112	853
-49	114	851
-50	116	848
-51	119	846
-52	121	842
-53	123	837
-54	125	834
-55	127	830
-56	129	826
-57	131	823
-58	134	826
-59	136	823
-60	139	823
-61	141	821
-62	143	816
-63	145	811
-64	147	807
-65	149	804
-66	151	800
-67	154	800
-68	156	796
-69	158	793
-70	160	789
-71	161	785
-72	164	783
-73	166	782
-74	168	777
-75	170	774
-76	173	773
-77	175	770
-78	177	766
-79	178	762
-80	181	763
-81	184	761
-82	186	758
-83	188	754
-84	189	750
-85	192	748
-86	194	745
-87	196	744
-88	198	740
-89	200	735
-90	201	731
-91	203	728
-92	205	724
-93	206	719
-94	208	716
-95	211	717
-96	214	715
-97	216	713
-98	218	712
-99	220	709
-100	223	707
-101	225	703
-102	227	703
-103	229	700
-104	232	698
-105	234	695
-106	235	692
-107	237	689
-108	239	686
-109	242	684
-110	244	681
-111	246	679
-112	248	676
-113	250	673
-114	251	670
-115	253	666
-116	255	665
-117	259	666
-118	261	664
-119	264	662
-120	266	660
-121	269	659
-122	270	656
-123	272	652
-124	274	650
-125	276	647
-126	278	644
-127	280	641
-128	282	638
-129	284	635
-130	285	632
-131	287	630
-132	290	629
-133	292	627
-134	294	623
-135	296	622
-136	298	619
-137	300	616
-138	302	614
-139	305	612
-140	307	610
-141	309	608
-142	311	606
-143	314	604
-144	316	602
-145	318	600
-146	321	599
-147	323	596
-148	325	594
-149	327	592
-150	329	589
-151	331	587
-152	333	584
-153	335	582
-154	337	578
-155	339	576
-156	340	573
-157	343	571
-158	345	569
-159	347	566
-160	348	563
-161	350	561
-162	353	558
-163	355	556
-164	357	554
-165	358	551
-166	360	548
-167	362	546
-168	364	543
-169	365	540
-170	367	537
-171	369	535
-172	371	532
-173	373	530
-174	375	527
-175	377	525
-176	379	522
-177	380	520
-178	383	518
-179	385	516
-180	387	514
-181	389	511
-182	391	508
-183	393	506
-184	395	503
-185	397	501
-186	399	499
-187	401	497
-188	403	494
-189	405	492
-190	407	490
-191	409	487
-192	410	485
-193	412	483
-194	414	480
-195	417	478
-196	419	476
-197	421	475
-198	424	473
-199	426	470
-200	428	468
-201	430	467
-202	433	465
-203	435	462
-204	437	460
-205	440	459
-206	442	457
-207	444	455
-208	447	454
-209	450	452
-210	452	450
-211	455	449
-212	458	447
-213	463	448
-214	467	448
-215	472	448
-216	474	445
-217	476	443
-218	478	441
-219	480	439
-220	482	436
-221	484	434
-222	486	431
-223	488	429
-224	490	427
-225	493	425
-226	494	422
-227	496	420
-228	498	417
-229	500	415
-230	502	413
-231	504	411
-232	506	409
-233	508	406
-234	512	405
-235	515	403
-236	517	401
-237	519	399
-238	522	397
-239	524	395
-240	526	393
-241	528	391
-242	530	388
-243	533	387
-244	535	384
-245	537	382
-246	540	380
-247	542	378
-248	545	376
-249	547	374
-250	549	372
-251	551	370
-252	554	368
-253	556	366
-254	558	363
-255	560	361
-256	562	359
-257	565	357
-258	567	354
-259	569	352
-260	571	350
-261	574	348
-262	576	346
-263	578	344
-264	581	342
-265	585	341
-266	588	339
-267	590	336
-268	592	334
-269	594	332
-270	596	330
-271	599	328
-272	601	326
-273	604	324
-274	606	321
-275	608	319
-276	610	317
-277	613	315
-278	615	313
-279	618	311
-280	620	309
-281	623	307
-282	640	312
-283	644	310
-284	647	309
-285	650	306
-286	652	304
-287	654	302
-288	657	300
-289	659	297
-290	661	295
-291	663	293
-292	666	290
-293	668	288
-294	671	286
-295	673	284
-296	675	282
-297	678	279
-298	680	277
-299	683	275
-300	685	273
-301	688	271
-302	692	269
-303	694	267
-304	698	265
-305	700	263
-306	702	260
-307	703	258
-308	705	255
-309	707	253
-310	710	251
-311	712	248
-312	715	246
-313	717	244
-314	720	242
-315	722	240
-316	724	237
-317	726	235
-318	729	233
-319	731	230
-320	734	228
-321	736	226
-322	739	224
-323	742	222
-324	745	220
-325	749	218
-326	751	216
-327	754	213
-328	758	212
-329	761	209
-330	765	208
-331	768	205
-332	769	203
-333	772	201
-334	774	198
-335	777	196
-336	780	194
-337	782	192
-338	787	190
-339	791	188
-340	794	186
-341	797	184
-342	802	182
-343	804	180
-344	807	177
-345	808	175
-346	811	173
-347	814	170
-348	816	168
-349	819	166
-350	821	163
-351	824	161
-352	828	159
-353	830	157
-354	833	154
-355	836	152
-356	839	150
-357	842	148
-358	845	146
-359	848	143
-360	850	141
-361	852	138
-362	855	136
-363	857	134
-364	860	132
-365	865	130
-366	867	127
-367	870	125
-368	872	122
-369	875	120
-370	878	118
-371	880	115
-372	882	113
-373	885	111
-374	887	108
-375	892	106
-376	894	104
-377	896	101
-378	898	99
-379	901	97
-380	903	94
-381	905	92
-382	908	90
-383	910	87
-384	912	85
-385	913	82
-386	916	80
-387	917	78
-388	919	75
-389	921	73
-390	922	70
-391	924	68
-392	926	65
-393	927	63
-394	928	61
-395	929	58
-396	931	56
-397	934	54
-398	936	51
-399	939	49
-400	940	46
-401	944	44
-402	949	42
-403	951	40
-404	953	37
-405	954	35
-406	956	32
-407	957	30
-408	958	28
-409	959	25
-410	961	23
-411	962	21
-412	963	18
-413	964	16
-414	965	13
-415	967	11
-416	968	9
-417	969	6
-418	970	4
-419	971	2
-420	972	0
-	932	0
-</file>
-
 <file path="dashboard/backend/main.py">
-# main.py (SEM CLUSTERIZAÇÃO)
+# main.py (COM MODELO HÍBRIDO - VERSÃO FINAL)
 
 import os
 import pickle
@@ -3543,93 +2593,219 @@ try:
 except Exception as e:
     print(f"Aviso: Não foi possível criar tabelas do DB na inicialização (pode ser normal se já existirem): {e}")
 
-# --- Carregamento de Artefatos de ML (Simplificado) ---
+# --- Carregamento de Artefatos de ML (ATUALIZADO PARA MODELO HÍBRIDO) ---
 ARTIFACTS_PATH = os.getenv('ARTIFACTS_PATH', 'ml_artifacts')
-MODELS, SCALERS, FEATURES, POLY_TRANS, POLY_FEATS, EXPLAINERS = {}, {}, {}, {}, {}, {}
+MODELS, SCALERS, FEATURES, EXPLAINERS = {}, {}, {}, {}
 
 try:
-    for target in ['target1', 'target2', 'target3']:
-        MODELS[target] = joblib.load(f"{ARTIFACTS_PATH}/modelo_{target}.pkl")
+    # Target 1 (modelo único - mantém compatibilidade)
+    MODELS['target1'] = joblib.load(f"{ARTIFACTS_PATH}/modelo_target1.pkl")
+    SCALERS['target1'] = joblib.load(f"{ARTIFACTS_PATH}/scaler_target1.pkl")
+    with open(f"{ARTIFACTS_PATH}/features_target1.pkl", "rb") as f:
+        FEATURES['target1'] = pickle.load(f)
+    EXPLAINERS['target1'] = shap.TreeExplainer(MODELS['target1'])
+
+    # Targets 2 e 3 (ensemble de 3 modelos cada - NOVA ESTRUTURA)
+    for target in ['target2', 'target3']:
+        MODELS[target] = []
+        for i in range(3): # Carrega os 3 modelos do ensemble
+            model = joblib.load(f"{ARTIFACTS_PATH}/modelo_{target}_ensemble_{i}.pkl")
+            MODELS[target].append(model)
+        
         SCALERS[target] = joblib.load(f"{ARTIFACTS_PATH}/scaler_{target}.pkl")
         with open(f"{ARTIFACTS_PATH}/features_{target}.pkl", "rb") as f:
             FEATURES[target] = pickle.load(f)
         
-        if target in ['target2', 'target3']:
-            POLY_TRANS[target] = joblib.load(f"{ARTIFACTS_PATH}/poly_transformer_{target}.pkl")
-            with open(f"{ARTIFACTS_PATH}/poly_features_list_{target}.pkl", "rb") as f:
-                POLY_FEATS[target] = pickle.load(f)
+        # Cria um explainer para cada modelo do ensemble
+        EXPLAINERS[target] = [shap.TreeExplainer(m) for m in MODELS[target]]
 
-    EXPLAINERS['target1'] = shap.TreeExplainer(MODELS['target1'])
-    EXPLAINERS['target2'] = shap.TreeExplainer(MODELS['target2'].named_estimators_['catboost'])
-    EXPLAINERS['target3'] = shap.TreeExplainer(MODELS['target3'].named_estimators_['catboost'])
-    print("✅ Artefatos de ML e Explainers carregados com sucesso.")
+    print("✅ Artefatos de ML e Explainers HÍBRIDOS carregados com sucesso.")
 except Exception as e:
     print(f"❌ ERRO CRÍTICO ao carregar artefatos de ML: {e}")
     MODELS = None # Invalida para a verificação de saúde da API
 
-# --- Funções de Pré-processamento (Sem Clusterização) ---
+# --- Funções de Pré-processamento ATUALIZADAS (Modelo Híbrido) ---
 
 def preprocess_target1(df_input):
+    """Pré-processamento específico para Target 1 (modelo único)"""
     df = df_input.copy()
     
-    # Lógica de FE do notebook de T1
-    if 'F0103' in df.columns: df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
+    # Conversão de F0103
+    if 'F0103' in df.columns: 
+        df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
+    
+    # Identificação de colunas
     p_cols = [c for c in df.columns if c.startswith('P') and any(char.isdigit() for char in c)]
     t_cols = [c for c in df.columns if c.startswith('T') and any(char.isdigit() for char in c)]
     f_cols = [c for c in df.columns if c.startswith('F') and len(c) > 1 and any(char.isdigit() for char in c)]
     
+    # Engenharia de features - taxas de pulos
+    p_minus_ones = sum((df[col] == -1).sum() for col in p_cols if col in df.columns)
+    t_minus_ones = sum((df[col] == -1).sum() for col in t_cols if col in df.columns)
+    df['taxa_pulos_P'] = p_minus_ones / len(p_cols) if len(p_cols) > 0 else 0
+    df['taxa_pulos_T'] = t_minus_ones / len(t_cols) if len(t_cols) > 0 else 0
+    df['taxa_pulos_geral'] = (p_minus_ones + t_minus_ones) / (len(p_cols) + len(t_cols)) if (len(p_cols) + len(t_cols)) > 0 else 0
+
+    # Processamento de colunas numéricas
     for col in p_cols + t_cols + f_cols:
-        df[col] = pd.to_numeric(df[col], errors='coerce').replace(-1, np.nan)
-        df[col].fillna(df[col].median(), inplace=True)
-        
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').replace(-1, np.nan)
+            df[col].fillna(df[col].median(), inplace=True)
+            
+    # Features de sono
     if 'QtdHorasDormi' in df.columns and 'Acordar' in df.columns:
         df['sono_total'] = df['QtdHorasDormi']
         df['sono_x_acordar'] = df['QtdHorasDormi'] * df['Acordar']
+        df['sono_squared'] = df['QtdHorasDormi'] ** 2
+        df['sono_irregular'] = np.abs(df['QtdHorasDormi'] - df['QtdHorasDormi'].median())
 
-    if p_cols: df['P_mean'] = df[p_cols].mean(axis=1); df['P_std'] = df[p_cols].std(axis=1)
-    if t_cols: df['T_mean'] = df[t_cols].mean(axis=1)
+    # Estatísticas das colunas P
+    if p_cols: 
+        df['P_mean'] = df[p_cols].mean(axis=1)
+        df['P_std'] = df[p_cols].std(axis=1)
+        df['P_min'] = df[p_cols].min(axis=1)
+        df['P_max'] = df[p_cols].max(axis=1)
+        df['P_range'] = df['P_max'] - df['P_min']
+        df['P_late'] = df[['P09', 'P12', 'P13', 'P15']].mean(axis=1) if all(c in df.columns for c in ['P09', 'P12', 'P13', 'P15']) else 0
+        df['P_early'] = df[['P01', 'P02', 'P03', 'P04']].mean(axis=1) if all(c in df.columns for c in ['P01', 'P02', 'P03', 'P04']) else 0
     
-    f_sono = [c for c in f_cols if c.startswith('F07')]; 
-    if f_sono: df['F_sono_mean'] = df[f_sono].mean(axis=1)
+    # Estatísticas das colunas T
+    if t_cols: 
+        df['T_mean'] = df[t_cols].mean(axis=1)
+        df['T_std'] = df[t_cols].std(axis=1)
+        df['T_min'] = df[t_cols].min(axis=1)
+        df['T_max'] = df[t_cols].max(axis=1)
+        
+    # Features específicas das colunas F
+    f_perfil = [c for c in f_cols if c.startswith('F01') or c.startswith('F02')]
+    if f_perfil: 
+        df['F_perfil_mean'] = df[f_perfil].mean(axis=1)
+        df['F_perfil_std'] = df[f_perfil].std(axis=1)
 
-    top3 = FEATURES['target1'][:3]
+    f_sono = [c for c in f_cols if c.startswith('F07')]
+    if f_sono: 
+        df['F_sono_mean'] = df[f_sono].mean(axis=1)
+        df['F_sono_std'] = df[f_sono].std(axis=1)
+    
+    f_final = [c for c in f_cols if c.startswith('F11')]
+    if f_final: 
+        df['F_final_mean'] = df[f_final].mean(axis=1)
+        df['F_final_std'] = df[f_final].std(axis=1)
+
+    df['F_mean_geral'] = df[f_cols].mean(axis=1)
+
+    # Interações entre as top 3 features
+    top3 = [f for f in FEATURES['target1'] if '_X_' not in f][:3]
     for i, f1 in enumerate(top3):
         for f2 in top3[i+1:]:
             df[f'{f1}_X_{f2}'] = df.get(f1, 0) * df.get(f2, 0)
     
+    # Garante todas as features esperadas pelo modelo
     df_final = df.reindex(columns=FEATURES['target1'], fill_value=0)
     return SCALERS['target1'].transform(df_final)
 
-def preprocess_target2_3(df_input, target_key):
+def preprocess_target2(df_input):
+    """Pré-processamento específico para Target 2 (ensemble)"""
     df = df_input.copy()
     
-    # Lógica de FE do notebook de T2/T3
-    if 'F0103' in df.columns: df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
-    if 'QtdHorasDormi' in df.columns and 'Acordar' in df.columns:
-        df['sono_total'] = df['QtdHorasDormi']; df['sono_x_acordar'] = df['QtdHorasDormi'] * df['Acordar']
+    if 'F0103' in df.columns: 
+        df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
     
+    # Identificação de colunas
     p_cols = [c for c in df.columns if c.startswith('P') and any(char.isdigit() for char in c)]
     t_cols = [c for c in df.columns if c.startswith('T') and any(char.isdigit() for char in c)]
     f_cols = [c for c in df.columns if c.startswith('F') and len(c) > 1 and any(char.isdigit() for char in c)]
 
+    # Processamento de colunas numéricas
     for col in p_cols + t_cols + f_cols:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-        df[col].fillna(df[col].median(), inplace=True)
-    
-    if p_cols: df['P_mean'] = df[p_cols].mean(axis=1)
-    if t_cols: df['T_mean'] = df[t_cols].mean(axis=1)
-    if f_cols: df['F_mean'] = df[f_cols].mean(axis=1)
-    
-    # Polinomial
-    df_poly_subset = df.reindex(columns=POLY_FEATS[target_key], fill_value=0)
-    X_poly = POLY_TRANS[target_key].transform(df_poly_subset)
-    poly_names = [f"poly_{name}" for name in POLY_TRANS[target_key].get_feature_names_out(POLY_FEATS[target_key])]
-    df = df.join(pd.DataFrame(X_poly, columns=poly_names, index=df.index))
-    
-    df_final = df.reindex(columns=FEATURES[target_key], fill_value=0)
-    return SCALERS[target_key].transform(df_final)
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').replace(-1, np.nan)
+            df[col].fillna(df[col].median(), inplace=True)
+            
+    # Features básicas de sono
+    if 'QtdHorasDormi' in df.columns and 'Acordar' in df.columns:
+        df['sono_total'] = df['QtdHorasDormi']
+        df['acordar'] = df['Acordar']
 
-# --- Rotas da API ---
+    # Médias específicas
+    f_sono = [c for c in f_cols if c.startswith('F07')]
+    if f_sono: 
+        df['F_sono_mean'] = df[f_sono].mean(axis=1)
+
+    f_final = [c for c in f_cols if c.startswith('F11')]
+    if f_final: 
+        df['F_final_mean'] = df[f_final].mean(axis=1)
+
+    if p_cols: 
+        df['P_mean'] = df[p_cols].mean(axis=1)
+    
+    # Interação entre as duas principais features
+    base_features = [f for f in FEATURES['target2'] if '_X_' not in f]
+    if len(base_features) >= 2:
+        f1, f2 = base_features[0], base_features[1]
+        interaction_name = f'{f1}_X_{f2}'
+        if interaction_name in FEATURES['target2']:
+            df[interaction_name] = df[f1] * df[f2]
+
+    # Garante todas as features esperadas pelo modelo
+    df_final = df.reindex(columns=FEATURES['target2'], fill_value=0)
+    return SCALERS['target2'].transform(df_final)
+
+def preprocess_target3(df_input):
+    """Pré-processamento específico para Target 3 (ensemble)"""
+    df = df_input.copy()
+
+    if 'F0103' in df.columns: 
+        df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
+
+    # Identificação de colunas
+    p_cols = [c for c in df.columns if c.startswith('P') and any(char.isdigit() for char in c)]
+    t_cols = [c for c in df.columns if c.startswith('T') and any(char.isdigit() for char in c)]
+    f_cols = [c for c in df.columns if c.startswith('F') and len(c) > 1 and any(char.isdigit() for char in c)]
+
+    # Processamento de colunas numéricas
+    for col in p_cols + t_cols + f_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').replace(-1, np.nan)
+            df[col].fillna(df[col].median(), inplace=True)
+    
+    # Estatísticas avançadas das colunas P
+    if p_cols:
+        df['P_mean'] = df[p_cols].mean(axis=1)
+        df['P_std'] = df[p_cols].std(axis=1)
+        df['P_late'] = df[['P09', 'P12', 'P13', 'P15']].mean(axis=1) if all(c in df.columns for c in ['P09', 'P12', 'P13', 'P15']) else 0
+        df['P_early'] = df[['P01', 'P02', 'P03', 'P04']].mean(axis=1) if all(c in df.columns for c in ['P01', 'P02', 'P03', 'P04']) else 0
+
+    # Estatísticas das colunas T
+    if t_cols:
+        df['T_mean'] = df[t_cols].mean(axis=1)
+        df['T_std'] = df[t_cols].std(axis=1)
+
+    # Features de sono avançadas
+    if 'QtdHorasSono' in df.columns:
+        f_sono = [c for c in f_cols if '07' in c]
+        if f_sono:
+            df['F_sono_mean'] = df[f_sono].mean(axis=1)
+            df['F_sono_std'] = df[f_sono].std(axis=1)
+            df['F_sono_max'] = df[f_sono].max(axis=1)
+        if 'Acordar' in df.columns:
+            df['sono_x_acordar'] = df['QtdHorasSono'] * df['Acordar']
+            df['acordar_squared'] = df['Acordar'] ** 2
+    
+    # Features finais
+    f_final = [c for c in f_cols if '11' in c]
+    if f_final: 
+        df['F_final_mean'] = df[f_final].mean(axis=1)
+
+    # Interação específica para Target 3
+    if 'F1103' in df.columns and 'P_mean' in df.columns and 'F1103_X_P_mean' in FEATURES['target3']:
+        df['F1103_X_P_mean'] = df['F1103'] * df['P_mean']
+    
+    # Garante todas as features esperadas pelo modelo
+    df_final = df.reindex(columns=FEATURES['target3'], fill_value=0)
+    return SCALERS['target3'].transform(df_final)
+
+# --- Rotas da API (ATUALIZADAS) ---
 @app.get("/health", status_code=status.HTTP_200_OK)
 def health_check():
     """Endpoint de health check para o Docker Compose."""
@@ -3648,7 +2824,6 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     except IntegrityError: # Captura erro de corrida (race condition)
         db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Usuário já existe")
-
 
 @app.post("/login", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
@@ -3678,28 +2853,47 @@ async def predict(file: UploadFile = File(...), user_id: str = Depends(auth.get_
     shap_data = {}
 
     try:
-        # Previsão T1
+        # Previsão T1 (modelo único)
         X_scaled_t1 = preprocess_target1(df_new)
         df_results['Previsão T1'] = MODELS['target1'].predict(X_scaled_t1).round(2)
         
-        # Previsão T2
-        X_scaled_t2 = preprocess_target2_3(df_new, 'target2')
-        df_results['Previsão T2'] = MODELS['target2'].predict(X_scaled_t2).round(2)
+        # Previsão T2 (ensemble - média dos 3 modelos)
+        X_scaled_t2 = preprocess_target2(df_new)
+        preds_t2 = [model.predict(X_scaled_t2) for model in MODELS['target2']]
+        df_results['Previsão T2'] = np.mean(preds_t2, axis=0).round(2)
         
-        # Previsão T3
-        X_scaled_t3 = preprocess_target2_3(df_new, 'target3')
-        df_results['Previsão T3'] = MODELS['target3'].predict(X_scaled_t3).round(2)
+        # Previsão T3 (ensemble - média dos 3 modelos)
+        X_scaled_t3 = preprocess_target3(df_new)
+        preds_t3 = [model.predict(X_scaled_t3) for model in MODELS['target3']]
+        df_results['Previsão T3'] = np.mean(preds_t3, axis=0).round(2)
 
-        # Cálculo SHAP
+        # Cálculo SHAP - ATUALIZADO PARA ENSEMBLE
+        # T1 (modelo único)
         shap_values_t1 = EXPLAINERS['target1'].shap_values(X_scaled_t1)
-        shap_values_t2 = EXPLAINERS['target2'].shap_values(X_scaled_t2)
-        shap_values_t3 = EXPLAINERS['target3'].shap_values(X_scaled_t3)
+        
+        # T2 (média dos SHAP values dos 3 modelos do ensemble)
+        shap_values_list_t2 = [explainer.shap_values(X_scaled_t2) for explainer in EXPLAINERS['target2']]
+        shap_values_t2 = np.mean(shap_values_list_t2, axis=0)
 
+        # T3 (média dos SHAP values dos 3 modelos do ensemble)
+        shap_values_list_t3 = [explainer.shap_values(X_scaled_t3) for explainer in EXPLAINERS['target3']]
+        shap_values_t3 = np.mean(shap_values_list_t3, axis=0)
+
+        # Estrutura dos dados SHAP para resposta
         for i, j_id in enumerate(df_results['Código de Acesso']):
             shap_data[str(j_id)] = {
-                'T1': {'shap_values': shap_values_t1[i].tolist(), 'feature_names': FEATURES['target1']},
-                'T2': {'shap_values': shap_values_t2[i].tolist(), 'feature_names': FEATURES['target2']},
-                'T3': {'shap_values': shap_values_t3[i].tolist(), 'feature_names': FEATURES['target3']}
+                'T1': {
+                    'shap_values': shap_values_t1[i].tolist(), 
+                    'feature_names': FEATURES['target1']
+                },
+                'T2': {
+                    'shap_values': shap_values_t2[i].tolist(), 
+                    'feature_names': FEATURES['target2']
+                },
+                'T3': {
+                    'shap_values': shap_values_t3[i].tolist(), 
+                    'feature_names': FEATURES['target3']
+                }
             }
             
     except Exception as e:
@@ -3740,19 +2934,33 @@ def get_feature_importance(user_id: str = Depends(auth.get_current_user_id)):
     
     importances_data = {}
     try:
-        for target_key, model in MODELS.items():
-            target_name = f'Target{target_key[-1]}'
+        # Target 1 (modelo único)
+        if hasattr(MODELS['target1'], 'feature_importances_'):
+            df_imp_t1 = pd.DataFrame({
+                'feature': FEATURES['target1'], 
+                'importance': MODELS['target1'].feature_importances_
+            }).sort_values(by='importance', ascending=False).head(20)
+            importances_data['Target1'] = df_imp_t1.to_dict('records')
+        else:
+            importances_data['Target1'] = []
+
+        # Targets 2 e 3 (média das importâncias dos ensembles)
+        for target_key, target_name in [('target2', 'Target2'), ('target3', 'Target3')]:
+            all_importances = []
+            for model in MODELS[target_key]:
+                if hasattr(model, 'feature_importances_'):
+                    all_importances.append(model.feature_importances_)
             
-            actual_model = model.named_estimators_['catboost'] if isinstance(model, StackingRegressor) else model
-            
-            if hasattr(actual_model, 'feature_importances_'):
+            if all_importances:
+                avg_importance = np.mean(all_importances, axis=0)
                 df_imp = pd.DataFrame({
-                    'feature': FEATURES[target_key], 
-                    'importance': actual_model.feature_importances_
+                    'feature': FEATURES[target_key],
+                    'importance': avg_importance
                 }).sort_values(by='importance', ascending=False).head(20)
                 importances_data[target_name] = df_imp.to_dict('records')
             else:
-                 importances_data[target_name] = []
+                importances_data[target_name] = []
+                
         return importances_data
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao calcular feature importance: {e}")
@@ -5113,6 +4321,44 @@ Quanto mais próximos os pontos estiverem dessa linha, mais precisas são as pre
 ![alt text](data/processed/02_model_ready/grafico_dispersao_previsto_vs_real.png)
 </file>
 
+<file path="dashboard/frontend/Dockerfile">
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Instala dependências
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia o código da aplicação
+COPY dashboard_dash.py .
+
+# Expor a porta do Dash (8050 é o padrão do Plotly Dash)
+EXPOSE 8050
+
+# Comando para rodar a aplicação Dash
+# O Dash é executado como um script Python normal (dashboard_dash.py), 
+# onde a porta 8050 e o host 0.0.0.0 já estão definidos internamente.
+CMD ["python", "dashboard_dash.py"]
+</file>
+
+<file path="dashboard/frontend/requirements.txt">
+requests # Para fazer chamadas HTTP ao Flask
+pandas
+plotly-express
+plotly
+xlsxwriter
+shap
+matplotlib
+dash 
+dash-bootstrap-components 
+dash-core-components 
+dash-html-components 
+dash-table 
+numpy 
+shap
+</file>
+
 <file path="dashboard/docker-compose.yml">
 version: '3.8'
 
@@ -5126,7 +4372,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     networks:
@@ -5167,44 +4413,6 @@ networks:
 
 volumes:
   postgres_data:
-</file>
-
-<file path="dashboard/frontend/Dockerfile">
-FROM python:3.10-slim
-
-WORKDIR /app
-
-# Instala dependências
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copia o código da aplicação
-COPY dashboard_dash.py .
-
-# Expor a porta do Dash (8050 é o padrão do Plotly Dash)
-EXPOSE 8050
-
-# Comando para rodar a aplicação Dash
-# O Dash é executado como um script Python normal (dashboard_dash.py), 
-# onde a porta 8050 e o host 0.0.0.0 já estão definidos internamente.
-CMD ["python", "dashboard_dash.py"]
-</file>
-
-<file path="dashboard/frontend/requirements.txt">
-requests # Para fazer chamadas HTTP ao Flask
-pandas
-plotly-express
-plotly
-xlsxwriter
-shap
-matplotlib
-dash 
-dash-bootstrap-components 
-dash-core-components 
-dash-html-components 
-dash-table 
-numpy 
-shap
 </file>
 
 <file path="dashboard/backend/Dockerfile">
