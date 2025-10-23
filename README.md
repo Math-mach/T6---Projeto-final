@@ -12,10 +12,10 @@ O projeto é conteinerizado com Docker e orquestrado com Docker Compose, seguind
 Frontend (Plotly Dash) <--> Backend (FastAPI) <--> Database (PostgreSQL)
 ```
 
--   **Frontend:** Um dashboard interativo onde o usuário pode fazer upload de novos dados, visualizar previsões, análises de importância de features e explicações de predição individuais com SHAP.
--   **Backend:** Uma API RESTful construída com FastAPI que lida com autenticação de usuários, recebe os dados, executa o pipeline de pré-processamento e predição usando modelos pré-treinados, e salva os resultados.
--   **Database:** Um banco de dados PostgreSQL para armazenar informações de usuários e histórico de previsões.
--   **ML Training:** Scripts Python para treinar os modelos de Machine Learning, realizar a otimização de hiperparâmetros e exportar os artefatos (modelos, scalers, listas de features) necessários para a API.
+- **Frontend:** Um dashboard interativo onde o usuário pode fazer upload de novos dados, visualizar previsões, análises de importância de features e explicações de predição individuais com SHAP.
+- **Backend:** Uma API RESTful construída com FastAPI que lida com autenticação de usuários, recebe os dados, executa o pipeline de pré-processamento e predição usando modelos pré-treinados, e salva os resultados.
+- **Database:** Um banco de dados PostgreSQL para armazenar informações de usuários e histórico de previsões.
+- **ML Training:** Scripts Python para treinar os modelos de Machine Learning, realizar a otimização de hiperparâmetros e exportar os artefatos (modelos, scalers, listas de features) necessários para a API.
 
 ## Estrutura do Projeto
 
@@ -35,8 +35,9 @@ Frontend (Plotly Dash) <--> Backend (FastAPI) <--> Database (PostgreSQL)
 ## Como Executar
 
 **Pré-requisitos:**
-*   Docker
-*   Docker Compose
+
+- Docker
+- Docker Compose
 
 **Passo 1: Preparar os Modelos de ML**
 
@@ -45,17 +46,27 @@ Frontend (Plotly Dash) <--> Backend (FastAPI) <--> Database (PostgreSQL)
 Esta parte contém os scripts responsáveis pelo treinamento, otimização e exportação dos modelos de Machine Learning. Pois, os modelos precisam ser treinados antes de iniciar a aplicação.
 
 # Navegue até a pasta backend
+
+```
 cd backend
+```
 
 # Instale as dependências
+
+```
 pip install -r requirements.txt
+```
 
 # Certifique-se que o excel para treinamento 'JogadoresV1.xlsx' esteja na mesma pasta e Execute os scripts de treinamento para gerar os artefatos
+
+```
 python export_artifacts_target1.py
 python export_artifacts_target2.py
 python export_artifacts_target3.py
+```
 
 ## Funcionamento
+
 Cada script `export_artifacts_target<N>.py` é um pipeline completo para um dos três targets. O processo geral inclui:
 
 1.  **Carregamento e Limpeza:** Os dados do arquivo `JogadoresV1.xlsx` são carregados. Valores ausentes são tratados (imputação por mediana) e tipos de dados são corrigidos.
@@ -66,8 +77,11 @@ Cada script `export_artifacts_target<N>.py` é um pipeline completo para um dos 
 6.  **Exportação de Artefatos:** O modelo treinado, o `scaler` (para normalização) e a lista de features utilizadas são salvos como arquivos `.pkl` na pasta `backend/ml_artifacts`.
 
 # Volte para a raiz do projeto
+
+```
 cd ..
 ```
+
 Isso criará a pasta `backend/ml_artifacts` com todos os arquivos `.pkl` necessários.
 
 **Passo 2: Configurar o Ambiente**
@@ -83,5 +97,6 @@ docker-compose up --build
 ```
 
 A aplicação estará disponível nos seguintes endereços:
--   **Dashboard:** `http://localhost:8050`
--   **API (documentação):** `http://localhost:5000/docs`
+
+- **Dashboard:** `http://localhost:8050`
+- **API (documentação):** `http://localhost:5000/docs`
