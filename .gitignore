@@ -18,6 +18,8 @@ venv/
 # Artefatos ML
 *.pkl
 *.joblib
+catboost_info/ 
+**/catboost_info/
 
 # Streamlit
 .streamlit/
