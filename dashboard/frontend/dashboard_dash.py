@@ -1,4 +1,4 @@
-# dashboard/frontend/dashboard_dash.py (VERSÃO FINAL REFATORADA E ROBUSTA)
+# dashboard/frontend/dashboard_dash.py (VERSÃO FINAL E LIMPA - SEM AUTENTICAÇÃO)
 
 import dash
 from dash import dcc, html, dash_table
@@ -21,21 +21,8 @@ app.title = "🎯 Projeto Daruma: Dashboard de Previsão"
 server = app.server
 
 # =============================================================================
-# FUNÇÕES DE API E UTILITÁRIAS
+# FUNÇÕES UTILITÁRIAS
 # =============================================================================
-
-def login_api(username, password):
-    try:
-        response = requests.post(f"{BACKEND_URL}/login", data={'username': username, 'password': password})
-        if response.status_code == 200: return response.json().get('access_token'), None
-        return None, response.json().get('detail', 'Erro desconhecido no login.')
-    except requests.exceptions.RequestException as e: return None, f"Erro de conexão com o backend: {e}"
-
-def register_api(username, password):
-    try:
-        response = requests.post(f"{BACKEND_URL}/register", json={'username': username, 'password': password})
-        return (True, response.json().get('msg')) if response.status_code == 201 else (False, response.json().get('msg', 'Erro desconhecido'))
-    except requests.exceptions.RequestException as e: return False, f"Erro de conexão com o backend: {e}"
 
 def parse_contents(contents):
     _, content_string = contents.split(',')
@@ -50,24 +37,14 @@ def convert_df_to_excel(df):
 # COMPONENTES DE LAYOUT E STORES
 # =============================================================================
 
-store = dcc.Store(id='session-store', storage_type='session', data={'logged_in': False, 'token': None, 'username': None, 'last_results': None})
+# O store agora inicia a aplicação como "logada" por padrão.
+store = dcc.Store(id='session-store', storage_type='session', data={'logged_in': True, 'token': 'default_token', 'username': 'Usuário', 'last_results': None})
 upload_data_store = dcc.Store(id='upload-data-store', storage_type='memory')
 cluster_data_store = dcc.Store(id='cluster-data-store', storage_type='memory')
-
-auth_layout = dbc.Container(dbc.Row(dbc.Col(dbc.Card(dbc.CardBody([
-    html.H3("🎯 Bem-vindo ao Projeto Daruma", className="text-center mb-4"),
-    dbc.Alert(id='auth-message', color='danger', is_open=False),
-    dbc.RadioItems(id='auth-mode', options=[{'label': 'Login', 'value': 'login'}, {'label': 'Registrar', 'value': 'register'}], value='login', inline=True, className="mb-3 d-flex justify-content-center"),
-    dbc.Input(id='username-input', placeholder='Usuário', type='text', className="mb-3"),
-    dbc.Input(id='password-input', placeholder='Senha', type='password', className="mb-3"),
-    dbc.Button("Acessar", id='auth-button', color='primary', className="w-100")
-])), width=4), justify="center", align="center", className="vh-100"), fluid=True)
 
 main_dashboard_layout = dbc.Container([
     dbc.Row([
         dbc.Col(html.H2("🎯 Projeto Daruma: Dashboard de Previsão"), width='auto'),
-        dbc.Col(html.Div(id='welcome-user-message'), className="text-center my-auto"),
-        dbc.Col(dbc.Button("Logout", id='logout-button', color='danger'), width='auto', className="ms-auto")
     ], className="mb-4 align-items-center"),
     dbc.Tabs([
         dbc.Tab(label="📊 Nova Previsão", tab_id="predict-tab", children=[
@@ -178,35 +155,14 @@ def get_feature_importance_layout(headers):
     except requests.exceptions.RequestException as e: return dbc.Alert(f"Erro de conexão com o backend: {e}", color="danger")
 
 # =============================================================================
-# CALLBACKS DE CONTROLE E AUTENTICAÇÃO
+# CALLBACKS DE CONTROLE
 # =============================================================================
 @app.callback(Output('page-content', 'children'), [Input('session-store', 'data')])
-def render_page_content(data): return main_dashboard_layout if data and data.get('logged_in') else auth_layout
+def render_page_content(data):
+    # Como 'logged_in' é sempre True, sempre renderiza o dashboard principal.
+    return main_dashboard_layout
 
-@app.callback(
-    [Output('url', 'pathname', allow_duplicate=True), Output('session-store', 'data'), Output('auth-message', 'children'), Output('auth-message', 'is_open')],
-    Input('auth-button', 'n_clicks'),
-    [State('auth-mode', 'value'), State('username-input', 'value'), State('password-input', 'value'), State('session-store', 'data')], prevent_initial_call=True)
-def handle_auth(n_clicks, mode, user, pwd, data):
-    if not user or not pwd: return dash.no_update, dash.no_update, "Usuário e senha são obrigatórios.", True
-    if mode == 'login':
-        token, error = login_api(user, pwd)
-        if token: data.update({'logged_in': True, 'token': token, 'username': user}); return '/', data, "", False
-        return dash.no_update, dash.no_update, error, True
-    elif mode == 'register':
-        success, message = register_api(user, pwd)
-        return dash.no_update, dash.no_update, message, True
-    return dash.no_update, dash.no_update, "", False
-
-@app.callback(Output('welcome-user-message', 'children'), Input('session-store', 'data'))
-def update_welcome_message(data): return f"Bem-vindo(a), {data.get('username')}!" if data and data.get('logged_in') else ""
-
-@app.callback(
-    [Output('url', 'pathname', allow_duplicate=True), Output('session-store', 'data', allow_duplicate=True)],
-    Input('logout-button', 'n_clicks'), [State('session-store', 'data')], prevent_initial_call=True)
-def handle_logout(n_clicks, data):
-    if n_clicks: data.update({'logged_in': False, 'token': None, 'username': None, 'last_results': None}); return '/', data
-    return dash.no_update, dash.no_update
+# Os callbacks handle_auth e handle_logout foram removidos.
 
 @app.callback(
     [Output('upload-data-store', 'data'), Output('upload-status', 'children'), Output('predict-button', 'disabled')],
@@ -218,10 +174,8 @@ def handle_upload(contents, filename):
     return None, "", True
 
 # =============================================================================
-# ############### INÍCIO DA REFATORAÇÃO DOS CALLBACKS ###############
+# CALLBACKS PRINCIPAIS DA APLICAÇÃO
 # =============================================================================
-
-# CALLBACK 1: Botão "Executar" -> Chama as APIs e armazena os resultados
 @app.callback(
     [Output('session-store', 'data', allow_duplicate=True), Output('cluster-data-store', 'data'),
      Output('upload-status', 'children', allow_duplicate=True), Output('tabs', 'active_tab')],
@@ -229,9 +183,8 @@ def handle_upload(contents, filename):
     [State('session-store', 'data'), State('upload-data-store', 'data')], prevent_initial_call=True)
 def run_api_calls(n_clicks, session_data, upload_data):
     if not n_clicks or not upload_data or not session_data: raise PreventUpdate
-    if not session_data.get('token'):
-        return dash.no_update, dash.no_update, dbc.Alert("Token não encontrado. Faça login.", color="danger"), "predict-tab"
-
+    
+    # O token é 'default_token', mas ainda o enviamos para manter a lógica do backend simples
     headers = {'Authorization': f'Bearer {session_data["token"]}'}
     files = {'file': (upload_data['filename'], base64.b64decode(upload_data['contents']), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}
     
@@ -254,7 +207,6 @@ def run_api_calls(n_clicks, session_data, upload_data):
 
     return session_data, cluster_data, "", 'overview-tab'
 
-# CALLBACK 2: Atualiza a Aba de Previsão Individual e SHAP quando os dados de previsão mudam
 @app.callback(
     [Output('prediction-results-output', 'children'), Output('shap-analysis-output', 'children')],
     Input('session-store', 'data'))
@@ -275,19 +227,16 @@ def update_prediction_tab(session_data):
             
     return prediction_layout, shap_layout
 
-# CALLBACK 3: Atualiza a Aba de Visão Geral quando os dados de previsão mudam
 @app.callback(Output('overview-output', 'children'), Input('session-store', 'data'))
 def update_overview_tab(session_data):
     if not session_data or 'last_results' not in session_data or not session_data['last_results']: return ""
     return render_overview_results(session_data['last_results'].get('predictions', []))
 
-# CALLBACK 4: Atualiza a Aba de Clustering quando os dados de cluster mudam
 @app.callback(Output('clustering-output', 'children'), Input('cluster-data-store', 'data'))
 def update_clustering_tab(cluster_data):
     if not cluster_data: return dbc.Alert("Execute uma nova análise para ver os perfis.", color="info")
     return render_clustering_results(cluster_data)
 
-# CALLBACK 5: Popula as abas "estáticas" ou "preguiçosas" quando são selecionadas
 @app.callback(
     [Output('history-output', 'children'), Output('feature-importance-output', 'children'), Output('performance-output', 'children')],
     Input('tabs', 'active_tab'), State('session-store', 'data'))

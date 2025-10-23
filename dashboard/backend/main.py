@@ -1,5 +1,4 @@
-# main.py (VERSÃO FINAL CORRIGIDA E ROBUSTA)
-
+# main.py (VERSÃO SEM AUTENTICAÇÃO PARA APRESENTAÇÃO
 import os
 import pickle
 import joblib
@@ -7,114 +6,97 @@ import pandas as pd
 import numpy as np
 import shap
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 import crud
 import models
 import schemas
-import auth
+import auth # Ainda precisamos dele para criar o hash da senha do usuário padrão
 import database
-from sklearn.ensemble import StackingRegressor
-from sklearn.metrics import silhouette_score
-from flask_bcrypt import Bcrypt
-from core import app
+from core import app # Importa a instância do FastAPI de core.py
 from io import BytesIO
 import warnings
-from pandas.errors import SettingWithCopyWarning
 import traceback
 
-# Silenciar warnings específicos
+# Silenciar warnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 warnings.filterwarnings("ignore", message="DataFrame is highly fragmented")
+
+# --- NOVO: Função para criar usuário padrão na inicialização ---
+@app.on_event("startup")
+def create_default_user_on_startup():
+    db = database.SessionLocal()
+    try:
+        # Tenta encontrar o usuário com ID 1
+        default_user = db.query(models.User).filter(models.User.id == 1).first()
+        if not default_user:
+            print("Criando usuário padrão (ID=1)...")
+            hashed_password = auth.get_password_hash("default_password")
+            # Cria um usuário com ID fixo se o banco suportar (SQLite não suporta bem, mas PostgreSQL sim)
+            # Para garantir, vamos criar um usuário normal e assumir que o primeiro será ID 1 em um DB vazio.
+            user_to_create = models.User(username="default_user", password_hash=hashed_password)
+            db.add(user_to_create)
+            db.commit()
+            print("Usuário padrão criado com sucesso.")
+        else:
+            print("Usuário padrão já existe.")
+    finally:
+        db.close()
 
 # Cria tabelas no DB (se não existirem) ao iniciar
 try:
     models.Base.metadata.create_all(bind=database.engine)
 except Exception as e:
-    print(f"Aviso: Não foi possível criar tabelas do DB na inicialização (pode ser normal se já existirem): {e}")
+    print(f"Aviso: Não foi possível criar tabelas do DB: {e}")
 
-# --- Carregamento de Artefatos de ML ---
+# --- Carregamento de Artefatos de ML (sem alteração) ---
 ARTIFACTS_PATH = os.getenv('ARTIFACTS_PATH', 'ml_artifacts')
 MODELS, SCALERS, FEATURES, EXPLAINERS = {}, {}, {}, {}
 CLUSTERING_MODELS = {}
 
 try:
-    # Target 1 (modelo único)
     MODELS['target1'] = joblib.load(f"{ARTIFACTS_PATH}/modelo_target1.pkl")
     SCALERS['target1'] = joblib.load(f"{ARTIFACTS_PATH}/scaler_target1.pkl")
-    with open(f"{ARTIFACTS_PATH}/features_target1.pkl", "rb") as f:
-        FEATURES['target1'] = pickle.load(f)
+    with open(f"{ARTIFACTS_PATH}/features_target1.pkl", "rb") as f: FEATURES['target1'] = pickle.load(f)
     EXPLAINERS['target1'] = shap.TreeExplainer(MODELS['target1'])
 
-    # Targets 2 e 3 (ensemble de 3 modelos cada)
     for target in ['target2', 'target3']:
-        MODELS[target] = []
-        for i in range(3):
-            model = joblib.load(f"{ARTIFACTS_PATH}/modelo_{target}_ensemble_{i}.pkl")
-            MODELS[target].append(model)
-        
+        MODELS[target] = [joblib.load(f"{ARTIFACTS_PATH}/modelo_{target}_ensemble_{i}.pkl") for i in range(3)]
         SCALERS[target] = joblib.load(f"{ARTIFACTS_PATH}/scaler_{target}.pkl")
-        with open(f"{ARTIFACTS_PATH}/features_{target}.pkl", "rb") as f:
-            FEATURES[target] = pickle.load(f)
-        
+        with open(f"{ARTIFACTS_PATH}/features_{target}.pkl", "rb") as f: FEATURES[target] = pickle.load(f)
         EXPLAINERS[target] = [shap.TreeExplainer(m) for m in MODELS[target]]
 
-    # Carregamento dos modelos de clustering
     CLUSTERING_MODELS['kmeans'] = joblib.load(f"{ARTIFACTS_PATH}/kmeans_model.pkl")
     CLUSTERING_MODELS['pca'] = joblib.load(f"{ARTIFACTS_PATH}/pca_model.pkl")
     CLUSTERING_MODELS['scaler'] = joblib.load(f"{ARTIFACTS_PATH}/scaler_cluster.pkl")
-    with open(f"{ARTIFACTS_PATH}/cluster_features.pkl", "rb") as f:
-        CLUSTERING_MODELS['features'] = pickle.load(f)
-    with open(f"{ARTIFACTS_PATH}/cluster_names.pkl", "rb") as f:
-        CLUSTERING_MODELS['names'] = pickle.load(f)
-
-    print("✅ Todos os artefatos de ML (Previsão e Clustering) carregados com sucesso.")
+    with open(f"{ARTIFACTS_PATH}/cluster_features.pkl", "rb") as f: CLUSTERING_MODELS['features'] = pickle.load(f)
+    with open(f"{ARTIFACTS_PATH}/cluster_names.pkl", "rb") as f: CLUSTERING_MODELS['names'] = pickle.load(f)
+    print("✅ Todos os artefatos de ML carregados.")
 except Exception as e:
     print(f"❌ ERRO CRÍTICO ao carregar artefatos de ML: {e}")
     MODELS = None
 
-# --- FUNÇÃO CRÍTICA: CORRIGIR COLUNAS DUPLICADAS ---
+# --- Funções de Pré-processamento e Auxiliares (sem alteração) ---
+# (As funções fix_duplicate_columns, safe_mean, preprocess_target1, etc. continuam aqui, sem mudanças)
 def fix_duplicate_columns(df):
     cols = pd.Series(df.columns)
     duplicated = cols[cols.duplicated()].unique()
     if len(duplicated) > 0:
-        print(f"⚠️ Colunas duplicadas detectadas: {list(duplicated)}")
         for dup in duplicated:
             mask = cols == dup
             indices = cols[mask].index.tolist()
-            for i, idx in enumerate(indices[1:], 1):
-                new_name = f"{dup}_v{i+1}"
-                cols.iloc[idx] = new_name
-                print(f"  ✏️ Renomeando '{dup}' (ocorrência {i+1}) para '{new_name}'")
+            for i, idx in enumerate(indices[1:], 1): cols.iloc[idx] = f"{dup}_v{i+1}"
         df.columns = cols
-        print("✅ Colunas duplicadas corrigidas!")
     return df
-
-# --- FUNÇÕES AUXILIARES SEGURAS ---
 def safe_mean(df, columns, axis=1):
-    valid_cols = [col for col in columns if col in df.columns]
-    if not valid_cols: return pd.Series(0, index=df.index)
-    return df[valid_cols].mean(axis=axis)
-
+    valid_cols = [col for col in columns if col in df.columns]; return df[valid_cols].mean(axis=axis) if valid_cols else pd.Series(0, index=df.index)
 def safe_std(df, columns, axis=1):
-    valid_cols = [col for col in columns if col in df.columns]
-    if not valid_cols: return pd.Series(0, index=df.index)
-    return df[valid_cols].std(axis=axis)
-
+    valid_cols = [col for col in columns if col in df.columns]; return df[valid_cols].std(axis=axis) if valid_cols else pd.Series(0, index=df.index)
 def safe_min(df, columns, axis=1):
-    valid_cols = [col for col in columns if col in df.columns]
-    if not valid_cols: return pd.Series(0, index=df.index)
-    return df[valid_cols].min(axis=axis)
-
+    valid_cols = [col for col in columns if col in df.columns]; return df[valid_cols].min(axis=axis) if valid_cols else pd.Series(0, index=df.index)
 def safe_max(df, columns, axis=1):
-    valid_cols = [col for col in columns if col in df.columns]
-    if not valid_cols: return pd.Series(0, index=df.index)
-    return df[valid_cols].max(axis=axis)
-
-# --- Funções de Pré-processamento (sem alterações) ---
+    valid_cols = [col for col in columns if col in df.columns]; return df[valid_cols].max(axis=axis) if valid_cols else pd.Series(0, index=df.index)
 def preprocess_target1(df_input):
     df = fix_duplicate_columns(df_input.copy())
     if 'F0103' in df.columns: df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
@@ -153,7 +135,6 @@ def preprocess_target1(df_input):
         for f2 in top3[i+1:]:
             interaction_name = f'{f1}_X_{f2}'; df[interaction_name] = df[f1] * df[f2] if f1 in df.columns and f2 in df.columns else 0
     return SCALERS['target1'].transform(df.reindex(columns=FEATURES['target1'], fill_value=0))
-
 def preprocess_target2(df_input):
     df = fix_duplicate_columns(df_input.copy())
     if 'F0103' in df.columns: df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
@@ -176,7 +157,6 @@ def preprocess_target2(df_input):
         if interaction_name in FEATURES['target2']:
             df[interaction_name] = df[f1] * df[f2] if f1 in df.columns and f2 in df.columns else 0
     return SCALERS['target2'].transform(df.reindex(columns=FEATURES['target2'], fill_value=0))
-
 def preprocess_target3(df_input):
     df = fix_duplicate_columns(df_input.copy())
     if 'F0103' in df.columns: df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
@@ -200,6 +180,11 @@ def preprocess_target3(df_input):
     if 'F1103' in df.columns and 'P_mean' in df.columns and 'F1103_X_P_mean' in FEATURES['target3']: df['F1103_X_P_mean'] = df['F1103'] * df['P_mean']
     return SCALERS['target3'].transform(df.reindex(columns=FEATURES['target3'], fill_value=0))
 
+
+# --- NOVO: Dependência para retornar um ID de usuário padrão ---
+def get_default_user_id():
+    return "1"  # Retorna o ID do usuário padrão como string
+
 # --- Rotas da API ---
 
 @app.get("/health", status_code=status.HTTP_200_OK)
@@ -207,105 +192,66 @@ def health_check():
     if MODELS is None: raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Modelos de ML não carregados.")
     return {"status": "ok"}
 
-@app.post("/register", status_code=status.HTTP_201_CREATED)
-def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
-    if crud.get_user_by_username(db, username=user.username): raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Usuário já existe")
-    try:
-        crud.create_user(db=db, user_schema=user)
-        return {"msg": "Usuário registrado com sucesso"}
-    except IntegrityError:
-        db.rollback(); raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Usuário já existe")
+# Endpoint /register e /login REMOVIDOS
 
-@app.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
-    user = crud.get_user_by_username(db, username=form_data.username)
-    if not user or not auth.verify_password(form_data.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
-    access_token = auth.create_access_token(data={"sub": str(user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
-
-# ############### INÍCIO DA CORREÇÃO ###############
+# Endpoint de Clustering MODIFICADO para não exigir autenticação real
 @app.post("/clustering")
-async def get_clustering_analysis(file: UploadFile = File(...), user_id: str = Depends(auth.get_current_user_id)):
+async def get_clustering_analysis(file: UploadFile = File(...), user_id: str = Depends(get_default_user_id)):
+    # O resto da função continua exatamente o mesmo...
     if not CLUSTERING_MODELS:
         raise HTTPException(status_code=503, detail="Modelos de clustering não disponíveis.")
-    
     try:
         contents = await file.read()
         df = pd.read_excel(BytesIO(contents))
-        
-        # Guarda uma cópia do dataframe original ANTES de qualquer modificação
         df_original_para_previsao = df.copy()
-        
         df = fix_duplicate_columns(df)
-        
-        # Recria as features necessárias para o clustering
         p_cols = [c for c in df.columns if c.startswith('P') and any(char.isdigit() for char in c)]
         t_cols = [c for c in df.columns if c.startswith('T') and any(char.isdigit() for char in c)]
-        
         for col in p_cols + t_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').replace(-1, np.nan)
                 if df[col].isnull().sum() > 0:
                     df[col].fillna(df[col].median(), inplace=True)
-        
         if p_cols:
             df['P_mean'] = safe_mean(df, p_cols)
             df['P_std'] = safe_std(df, p_cols)
             df['P_max'] = safe_max(df, p_cols)
-        
         if t_cols:
             df['T_mean'] = safe_mean(df, t_cols)
             df['T_total'] = df[t_cols].sum(axis=1) if t_cols else 0
-        
         f_cols = [c for c in df.columns if c.startswith('F') and len(c) > 1 and any(char.isdigit() for char in c)]
         if f_sono := [c for c in f_cols if c.startswith('F07')]: df['F_sono_mean'] = safe_mean(df, f_sono)
         if f_final := [c for c in f_cols if c.startswith('F11')]: df['F_final_mean'] = safe_mean(df, f_final)
-        
         X_cluster = df.reindex(columns=CLUSTERING_MODELS['features'], fill_value=0)
-        
         X_scaled = CLUSTERING_MODELS['scaler'].transform(X_cluster)
         clusters = CLUSTERING_MODELS['kmeans'].predict(X_scaled)
         X_pca = CLUSTERING_MODELS['pca'].transform(X_scaled)
-        
-        # Usa a cópia original do DF para as previsões, evitando erros
         df['Previsão T1'] = MODELS['target1'].predict(preprocess_target1(df_original_para_previsao.copy()))
         df['Previsão T2'] = np.mean([m.predict(preprocess_target2(df_original_para_previsao.copy())) for m in MODELS['target2']], axis=0)
         df['Previsão T3'] = np.mean([m.predict(preprocess_target3(df_original_para_previsao.copy())) for m in MODELS['target3']], axis=0)
         df['Cluster'] = clusters
-        
         stats = {}
         cluster_names = CLUSTERING_MODELS['names']
         for cid in np.unique(clusters):
             mask = clusters == cid
             def safe_float(value): return 0.0 if pd.isna(value) else float(value)
             stats[str(cid)] = {
-                "name": cluster_names.get(cid, f"Cluster {cid}"),
-                "count": int(mask.sum()),
+                "name": cluster_names.get(cid, f"Cluster {cid}"), "count": int(mask.sum()),
                 "percentage": float(mask.sum() / len(clusters) * 100) if len(clusters) > 0 else 0.0,
                 "P_mean": safe_float(df.loc[mask, 'P_mean'].mean()) if 'P_mean' in df.columns else 0.0,
                 "Target1": safe_float(df.loc[mask, 'Previsão T1'].mean()),
-                "Target2": safe_float(df.loc[mask, 'Previsão T2'].mean()),
-                "Target3": safe_float(df.loc[mask, 'Previsão T3'].mean())
+                "Target2": safe_float(df.loc[mask, 'Previsão T2'].mean()), "Target3": safe_float(df.loc[mask, 'Previsão T3'].mean())
             }
-
         jogadores = df_original_para_previsao['Código de Acesso'].tolist() if 'Código de Acesso' in df_original_para_previsao.columns else list(range(len(df)))
         counts = {str(i): float(np.sum(clusters == i) / len(clusters)) for i in np.unique(clusters)}
-        
-        return {
-            "pca_coords": X_pca.tolist(), "clusters": clusters.tolist(),
-            "jogadores": jogadores, "stats": stats, "counts": counts
-        }
-        
+        return {"pca_coords": X_pca.tolist(), "clusters": clusters.tolist(), "jogadores": jogadores, "stats": stats, "counts": counts}
     except Exception as e:
-        print(f"❌ ERRO EXPLÍCITO NO ENDPOINT DE CLUSTERING: {e}")
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Erro interno no processo de clustering: {e}")
+        traceback.print_exc(); raise HTTPException(status_code=500, detail=f"Erro no clustering: {e}")
 
-# ############### FIM DA CORREÇÃO ###############
-
+# Endpoint /predict MODIFICADO para não exigir autenticação real
 @app.post("/predict")
-async def predict(file: UploadFile = File(...), user_id: str = Depends(auth.get_current_user_id), db: Session = Depends(database.get_db)):
+async def predict(file: UploadFile = File(...), user_id: str = Depends(get_default_user_id), db: Session = Depends(database.get_db)):
+    # O resto da função continua exatamente o mesmo...
     if MODELS is None: raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Modelos de ML não estão disponíveis.")
     try:
         contents = await file.read(); buffer = BytesIO(contents); df_new = pd.read_excel(buffer)
@@ -314,51 +260,36 @@ async def predict(file: UploadFile = File(...), user_id: str = Depends(auth.get_
     except Exception as e: raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao ler o arquivo Excel: {e}")
     df_results = df_new.copy(); shap_data = {}
     try:
-        X_scaled_t1 = preprocess_target1(df_new)
-        df_results['Previsão T1'] = MODELS['target1'].predict(X_scaled_t1).round(2)
-        X_scaled_t2 = preprocess_target2(df_new)
-        df_results['Previsão T2'] = np.mean([model.predict(X_scaled_t2) for model in MODELS['target2']], axis=0).round(2)
-        X_scaled_t3 = preprocess_target3(df_new)
-        df_results['Previsão T3'] = np.mean([model.predict(X_scaled_t3) for model in MODELS['target3']], axis=0).round(2)
-        
+        X_scaled_t1 = preprocess_target1(df_new.copy()); df_results['Previsão T1'] = MODELS['target1'].predict(X_scaled_t1).round(2)
+        X_scaled_t2 = preprocess_target2(df_new.copy()); df_results['Previsão T2'] = np.mean([model.predict(X_scaled_t2) for model in MODELS['target2']], axis=0).round(2)
+        X_scaled_t3 = preprocess_target3(df_new.copy()); df_results['Previsão T3'] = np.mean([model.predict(X_scaled_t3) for model in MODELS['target3']], axis=0).round(2)
         shap_values_t1 = EXPLAINERS['target1'].shap_values(X_scaled_t1)
         shap_values_t2 = np.mean([explainer.shap_values(X_scaled_t2) for explainer in EXPLAINERS['target2']], axis=0)
         shap_values_t3 = np.mean([explainer.shap_values(X_scaled_t3) for explainer in EXPLAINERS['target3']], axis=0)
-
         for i, j_id in enumerate(df_results['Código de Acesso']):
-            shap_data[str(j_id)] = {
-                'T1': {'shap_values': shap_values_t1[i].tolist(), 'feature_names': FEATURES['target1']},
-                'T2': {'shap_values': shap_values_t2[i].tolist(), 'feature_names': FEATURES['target2']},
-                'T3': {'shap_values': shap_values_t3[i].tolist(), 'feature_names': FEATURES['target3']}
-            }
+            shap_data[str(j_id)] = {'T1': {'shap_values': shap_values_t1[i].tolist(), 'feature_names': FEATURES['target1']},'T2': {'shap_values': shap_values_t2[i].tolist(), 'feature_names': FEATURES['target2']},'T3': {'shap_values': shap_values_t3[i].tolist(), 'feature_names': FEATURES['target3']}}
     except Exception as e: raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro no pipeline de previsão: {e}")
     try:
-        for _, row in df_results.iterrows():
-            db.add(models.Prediction(user_id=int(user_id), jogador_id=str(row['Código de Acesso']), pred_t1=row['Previsão T1'], pred_t2=row['Previsão T2'], pred_t3=row['Previsão T3']))
+        for _, row in df_results.iterrows(): db.add(models.Prediction(user_id=int(user_id), jogador_id=str(row['Código de Acesso']), pred_t1=row['Previsão T1'], pred_t2=row['Previsão T2'], pred_t3=row['Previsão T3']))
         db.commit()
-    except Exception as e:
-        db.rollback(); raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao salvar previsão no banco de dados: {e}")
-    return {
-        "predictions": df_results[['Código de Acesso', 'Previsão T1', 'Previsão T2', 'Previsão T3']].to_dict('records'),
-        "shap_data": shap_data
-    }
+    except Exception as e: db.rollback(); raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao salvar previsão no banco de dados: {e}")
+    return {"predictions": df_results[['Código de Acesso', 'Previsão T1', 'Previsão T2', 'Previsão T3']].to_dict('records'), "shap_data": shap_data}
 
+# Endpoint /history MODIFICADO para não exigir autenticação real
 @app.get("/history")
-def get_history(user_id: str = Depends(auth.get_current_user_id), db: Session = Depends(database.get_db)):
-    query = db.query(
-        models.Prediction.upload_timestamp, func.count(models.Prediction.id).label('num_jogadores')
-    ).filter(models.Prediction.user_id == int(user_id)).group_by(models.Prediction.upload_timestamp).order_by(models.Prediction.upload_timestamp.desc()).all()
+def get_history(user_id: str = Depends(get_default_user_id), db: Session = Depends(database.get_db)):
+    query = db.query(models.Prediction.upload_timestamp, func.count(models.Prediction.id).label('num_jogadores')).filter(models.Prediction.user_id == int(user_id)).group_by(models.Prediction.upload_timestamp).order_by(models.Prediction.upload_timestamp.desc()).all()
     return [{"timestamp": r.upload_timestamp.strftime("%Y-%m-%d %H:%M:%S"), "num_jogadores": r.num_jogadores} for r in query]
 
+# Endpoint /feature_importance MODIFICADO para não exigir autenticação real
 @app.get("/feature_importance")
-def get_feature_importance(user_id: str = Depends(auth.get_current_user_id)):
+def get_feature_importance(user_id: str = Depends(get_default_user_id)):
     if MODELS is None: raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Modelos de ML não carregados.")
     importances_data = {}
     try:
         if hasattr(MODELS['target1'], 'feature_importances_'):
             df_imp_t1 = pd.DataFrame({'feature': FEATURES['target1'], 'importance': MODELS['target1'].feature_importances_}).sort_values(by='importance', ascending=False).head(20)
             importances_data['Target1'] = df_imp_t1.to_dict('records')
-        
         for target_key, target_name in [('target2', 'Target2'), ('target3', 'Target3')]:
             if all_importances := [model.feature_importances_ for model in MODELS[target_key] if hasattr(model, 'feature_importances_')]:
                 df_imp = pd.DataFrame({'feature': FEATURES[target_key], 'importance': np.mean(all_importances, axis=0)}).sort_values(by='importance', ascending=False).head(20)
