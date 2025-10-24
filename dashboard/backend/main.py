@@ -54,18 +54,38 @@ except Exception as e:
 ARTIFACTS_PATH = os.getenv('ARTIFACTS_PATH', 'ml_artifacts')
 MODELS, SCALERS, FEATURES, EXPLAINERS = {}, {}, {}, {}
 CLUSTERING_MODELS = {}
+MODEL_METRICS = {}  # ⭐ NOVO: Armazena as métricas dos modelos
 
 try:
     MODELS['target1'] = joblib.load(f"{ARTIFACTS_PATH}/modelo_target1.pkl")
     SCALERS['target1'] = joblib.load(f"{ARTIFACTS_PATH}/scaler_target1.pkl")
     with open(f"{ARTIFACTS_PATH}/features_target1.pkl", "rb") as f: FEATURES['target1'] = pickle.load(f)
     EXPLAINERS['target1'] = shap.TreeExplainer(MODELS['target1'])
+    
+    # ⭐ NOVO: Carregar métricas do Target 1
+    try:
+        import json
+        with open(f"{ARTIFACTS_PATH}/metrics_target1.json", "r") as f:
+            MODEL_METRICS['target1'] = json.load(f)
+        print("✅ Métricas Target 1 carregadas")
+    except FileNotFoundError:
+        print("⚠️  Métricas Target 1 não encontradas (rode o script de treinamento)")
+        MODEL_METRICS['target1'] = None
 
     for target in ['target2', 'target3']:
         MODELS[target] = [joblib.load(f"{ARTIFACTS_PATH}/modelo_{target}_ensemble_{i}.pkl") for i in range(3)]
         SCALERS[target] = joblib.load(f"{ARTIFACTS_PATH}/scaler_{target}.pkl")
         with open(f"{ARTIFACTS_PATH}/features_{target}.pkl", "rb") as f: FEATURES[target] = pickle.load(f)
         EXPLAINERS[target] = [shap.TreeExplainer(m) for m in MODELS[target]]
+        
+        # ⭐ NOVO: Carregar métricas dos Targets 2 e 3
+        try:
+            with open(f"{ARTIFACTS_PATH}/metrics_{target}.json", "r") as f:
+                MODEL_METRICS[target] = json.load(f)
+            print(f"✅ Métricas {target.capitalize()} carregadas")
+        except FileNotFoundError:
+            print(f"⚠️  Métricas {target.capitalize()} não encontradas (rode o script de treinamento)")
+            MODEL_METRICS[target] = None
 
     CLUSTERING_MODELS['kmeans'] = joblib.load(f"{ARTIFACTS_PATH}/kmeans_model.pkl")
     CLUSTERING_MODELS['pca'] = joblib.load(f"{ARTIFACTS_PATH}/pca_model.pkl")
@@ -296,3 +316,41 @@ def get_feature_importance(user_id: str = Depends(get_default_user_id)):
                 importances_data[target_name] = df_imp.to_dict('records')
         return importances_data
     except Exception as e: raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao calcular feature importance: {e}")
+
+# ⭐ NOVO: Endpoint /model_performance - Retorna métricas dos modelos
+@app.get("/model_performance")
+def get_model_performance(user_id: str = Depends(get_default_user_id)):
+    """
+    Retorna as métricas de performance dos 3 modelos (R1, R2, R3).
+    Métricas incluem: R² Treino, R² Teste, R² LOO-CV, MAE, RMSE, Overfitting.
+    """
+    if MODELS is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Modelos de ML não carregados."
+        )
+    
+    try:
+        # Verificar se as métricas foram carregadas
+        if not MODEL_METRICS or all(m is None for m in MODEL_METRICS.values()):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Métricas não encontradas. Execute os scripts de treinamento (r1hibrido.py, r2.py, r3.py) para gerar os arquivos metrics_*.json"
+            )
+        
+        # Estruturar resposta
+        response = {
+            "R1 (Performance)": MODEL_METRICS.get('target1'),
+            "R2 (Variável)": MODEL_METRICS.get('target2'),
+            "R3 (Formulários)": MODEL_METRICS.get('target3')
+        }
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao buscar métricas de performance: {e}"
+        )

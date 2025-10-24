@@ -14,6 +14,7 @@ import optuna
 import joblib
 import pickle
 import os
+import json
 
 warnings.filterwarnings('ignore')
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -197,6 +198,61 @@ for i, seed in enumerate([42, 123, 456], 1):
     print(f"  ✅ Modelo {i} treinado!")
 
 # =============================================================================
+# CALCULAR MÉTRICAS DE PERFORMANCE DO ENSEMBLE
+# =============================================================================
+
+print("\n📊 Calculando métricas do ensemble...")
+
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from sklearn.model_selection import LeaveOneOut
+import json
+
+# Fazer predições do ensemble (média dos 3 modelos) no conjunto de teste base
+y_pred_ensemble_train = np.mean([model.predict(X_train_base_r3_scaled) for model in models_r3], axis=0)
+y_pred_ensemble_test = np.mean([model.predict(X_test_base_r3_scaled) for model in models_r3], axis=0)
+
+# Métricas no treino e teste
+r2_train_r3 = r2_score(y_train_base_r3, y_pred_ensemble_train)
+r2_test_r3 = r2_score(y_test_base_r3, y_pred_ensemble_test)
+mae_test_r3 = mean_absolute_error(y_test_base_r3, y_pred_ensemble_test)
+rmse_test_r3 = np.sqrt(mean_squared_error(y_test_base_r3, y_pred_ensemble_test))
+overfit_r3 = abs(r2_train_r3 - r2_test_r3) / r2_train_r3 * 100 if r2_train_r3 > 0 else 0
+
+# Calcular LOO-CV
+print("  Calculando LOO-CV do ensemble...")
+loo = LeaveOneOut()
+loo_predictions = []
+
+# Escalar todo o dataset com o scaler base
+X_r3_scaled = scaler_base_r3.transform(X_r3)
+
+for i, (train_idx, test_idx) in enumerate(loo.split(X_r3_scaled)):
+    if i % 40 == 0:
+        print(f"    LOO-CV Progresso: {i}/{len(X_r3_scaled)}")
+    
+    X_tr, X_te = X_r3_scaled[train_idx], X_r3_scaled[test_idx]
+    y_tr, y_te = y_r3[train_idx], y_r3[test_idx]
+    
+    # Treinar ensemble de 3 modelos para LOO-CV
+    loo_models = []
+    for seed in [42, 123, 456]:
+        params_loo = best_params_r3.copy()
+        params_loo['random_seed'] = seed
+        model_loo = CatBoostRegressor(**params_loo)
+        model_loo.fit(X_tr, y_tr, verbose=False)
+        loo_models.append(model_loo)
+    
+    # Média das predições dos 3 modelos
+    loo_pred = np.mean([m.predict(X_te)[0] for m in loo_models])
+    loo_predictions.append(loo_pred)
+
+loo_r2_r3 = r2_score(y_r3, loo_predictions)
+mae_loo_r3 = mean_absolute_error(y_r3, loo_predictions)
+rmse_loo_r3 = np.sqrt(mean_squared_error(y_r3, loo_predictions))
+
+print(f"  ✅ Métricas calculadas!")
+
+# =============================================================================
 # SALVAR ARTEFATOS
 # =============================================================================
 
@@ -216,6 +272,39 @@ with open(f'{ARTIFACTS_PATH}/features_target3.pkl', 'wb') as f:
     pickle.dump(selected_features_r3, f)
 print(f"  ✅ Features salvas: {ARTIFACTS_PATH}/features_target3.pkl")
 
+# =============================================================================
+# SALVAR MÉTRICAS DE PERFORMANCE
+# =============================================================================
+
+print("\n💾 Salvando métricas de performance...")
+
+metrics_r3 = {
+    'r2_train': float(r2_train_r3),
+    'r2_test': float(r2_test_r3),
+    'r2_loo_cv': float(loo_r2_r3),
+    'mae_test': float(mae_test_r3),
+    'mae_loo': float(mae_loo_r3),
+    'rmse_test': float(rmse_test_r3),
+    'rmse_loo': float(rmse_loo_r3),
+    'overfitting_pct': float(overfit_r3),
+    'n_features': len(selected_features_r3),
+    'ensemble_size': 3
+}
+
+with open(f'{ARTIFACTS_PATH}/metrics_target3.json', 'w') as f:
+    json.dump(metrics_r3, f, indent=2)
+
+print(f"  ✅ Métricas salvas: {ARTIFACTS_PATH}/metrics_target3.json")
+print(f"\n  📊 MÉTRICAS FINAIS:")
+print(f"    • R² Treino:    {r2_train_r3:.4f}")
+print(f"    • R² Teste:     {r2_test_r3:.4f}")
+print(f"    • R² LOO-CV:    {loo_r2_r3:.4f} ⭐")
+print(f"    • MAE Teste:    {mae_test_r3:.2f}")
+print(f"    • MAE LOO:      {mae_loo_r3:.2f}")
+print(f"    • RMSE Teste:   {rmse_test_r3:.2f}")
+print(f"    • RMSE LOO:     {rmse_loo_r3:.2f}")
+print(f"    • Overfitting:  {overfit_r3:.1f}%")
+
 print("\n" + "=" * 100)
 print("✅ TARGET 3 (R3) - ENSEMBLE COMPLETO!".center(100))
 print("=" * 100)
@@ -225,4 +314,5 @@ print(f"  • modelo_target3_ensemble_1.pkl")
 print(f"  • modelo_target3_ensemble_2.pkl")
 print(f"  • scaler_target3.pkl (RobustScaler)")
 print(f"  • features_target3.pkl")
+print(f"  • metrics_target3.json  ⭐ NOVO!")
 print(f"\n💡 NOTA: A API fará a média das predições dos 3 modelos")

@@ -275,6 +275,69 @@ with open(f'{ARTIFACTS_PATH}/features_target1.pkl', 'wb') as f:
     pickle.dump(selected_features_r1, f)
 print(f"  ✅ Features salvas: {ARTIFACTS_PATH}/features_target1.pkl")
 
+# =============================================================================
+# SALVAR MÉTRICAS DE PERFORMANCE
+# =============================================================================
+
+print("\n💾 Salvando métricas de performance...")
+
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from sklearn.model_selection import LeaveOneOut
+
+# Calcular métricas no conjunto de teste
+y_pred_test = model_r1.predict(X_test_r1)
+r2_train = r2_score(y_train_r1, model_r1.predict(X_train_r1))
+r2_test = r2_score(y_test_r1, y_pred_test)
+mae_test = mean_absolute_error(y_test_r1, y_pred_test)
+rmse_test = np.sqrt(mean_squared_error(y_test_r1, y_pred_test))
+overfitting = abs(r2_train - r2_test) / r2_train if r2_train > 0 else 0
+
+# Calcular LOO-CV
+print("  Calculando LOO-CV...")
+loo = LeaveOneOut()
+loo_predictions = []
+
+for i, (train_idx, test_idx) in enumerate(loo.split(X_r1)):
+    if i % 40 == 0:
+        print(f"    LOO-CV Progresso: {i}/{len(X_r1)}")
+    X_tr, X_te = X_r1[train_idx], X_r1[test_idx]
+    y_tr, y_te = y_r1[train_idx], y_r1[test_idx]
+    
+    model_loo = CatBoostRegressor(**best_params_r1)
+    model_loo.fit(X_tr, y_tr, verbose=False)
+    loo_predictions.append(model_loo.predict(X_te)[0])
+
+r2_loo = r2_score(y_r1, loo_predictions)
+mae_loo = mean_absolute_error(y_r1, loo_predictions)
+rmse_loo = np.sqrt(mean_squared_error(y_r1, loo_predictions))
+
+metrics_r1 = {
+    'r2_train': float(r2_train),
+    'r2_test': float(r2_test),
+    'r2_loo_cv': float(r2_loo),
+    'mae_test': float(mae_test),
+    'mae_loo': float(mae_loo),
+    'rmse_test': float(rmse_test),
+    'rmse_loo': float(rmse_loo),
+    'overfitting_pct': float(overfitting * 100),
+    'n_features': len(selected_features_r1)
+}
+
+import json
+with open(f'{ARTIFACTS_PATH}/metrics_target1.json', 'w') as f:
+    json.dump(metrics_r1, f, indent=2)
+
+print(f"  ✅ Métricas salvas: {ARTIFACTS_PATH}/metrics_target1.json")
+print(f"\n  📊 MÉTRICAS FINAIS:")
+print(f"    • R² Treino:    {r2_train:.4f}")
+print(f"    • R² Teste:     {r2_test:.4f}")
+print(f"    • R² LOO-CV:    {r2_loo:.4f} ⭐")
+print(f"    • MAE Teste:    {mae_test:.2f}")
+print(f"    • MAE LOO:      {mae_loo:.2f}")
+print(f"    • RMSE Teste:   {rmse_test:.2f}")
+print(f"    • RMSE LOO:     {rmse_loo:.2f}")
+print(f"    • Overfitting:  {overfitting*100:.1f}%")
+
 print("\n" + "=" * 100)
 print("✅ TARGET 1 (R1) - TREINAMENTO COMPLETO!".center(100))
 print("=" * 100)
@@ -282,3 +345,4 @@ print(f"\n📦 Artefatos salvos em: {ARTIFACTS_PATH}/")
 print(f"  • modelo_target1.pkl")
 print(f"  • scaler_target1.pkl")
 print(f"  • features_target1.pkl")
+print(f"  • metrics_target1.json  ⭐ NOVO!")

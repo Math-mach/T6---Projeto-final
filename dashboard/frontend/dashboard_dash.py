@@ -1,4 +1,4 @@
-# dashboard/frontend/dashboard_dash.py (VERSÃO FINAL E LIMPA - SEM AUTENTICAÇÃO)
+# dashboard/frontend/dashboard_dash.py (VERSÃO FINAL ATUALIZADA - SEM AUTENTICAÇÃO)
 
 import dash
 from dash import dcc, html, dash_table
@@ -37,7 +37,6 @@ def convert_df_to_excel(df):
 # COMPONENTES DE LAYOUT E STORES
 # =============================================================================
 
-# O store agora inicia a aplicação como "logada" por padrão.
 store = dcc.Store(id='session-store', storage_type='session', data={'logged_in': True, 'token': 'default_token', 'username': 'Usuário', 'last_results': None})
 upload_data_store = dcc.Store(id='upload-data-store', storage_type='memory')
 cluster_data_store = dcc.Store(id='cluster-data-store', storage_type='memory')
@@ -68,7 +67,7 @@ main_dashboard_layout = dbc.Container([
 app.layout = html.Div([dcc.Location(id='url', refresh=False), store, upload_data_store, cluster_data_store, html.Div(id='page-content')])
 
 # =============================================================================
-# FUNÇÕES DE RENDERIZAÇÃO DAS ABAS (sem alterações)
+# FUNÇÕES DE RENDERIZAÇÃO DAS ABAS
 # =============================================================================
 def render_prediction_results(predictions_data):
     if not predictions_data: return dbc.Alert("Nenhuma previsão retornada.", color="warning")
@@ -122,12 +121,160 @@ def render_clustering_results(cluster_data):
         return html.Div([html.H3("Análise de Perfis (Clustering)"), dbc.Row(stats_cards, className="mb-4"), dcc.Graph(figure=fig_pca)])
     except Exception as e: return dbc.Alert(f"Erro ao renderizar os resultados do clustering: {e}", color="danger")
 
-def render_performance_results():
-    metrics = {'Target 1': {'R² LOO-CV': 0.5558, 'Overfitting': 11.0, 'Features': 33}, 'Target 2': {'R² LOO-CV': 0.4137, 'Overfitting': 14.2, 'Features': 13}, 'Target 3': {'R² LOO-CV': 0.4285, 'Overfitting': -1.0, 'Features': 16}}
-    cards = [dbc.Col(dbc.Card([dbc.CardHeader(f"🎯 {target}"), dbc.CardBody([html.P(f"• R² LOO-CV: {data['R² LOO-CV']:.4f} ⭐"), html.P(f"• Overfitting: {data['Overfitting']:.1f}%"), html.P(f"• Features: {data['Features']}")])], color="light")) for target, data in metrics.items()]
-    df_perf = pd.DataFrame(metrics).T.reset_index().rename(columns={'index': 'Target'})
-    fig_r2 = px.bar(df_perf, x='R² LOO-CV', y='Target', orientation='h', title="Comparativo de Performance (R²)")
-    return html.Div([html.H3("Performance dos Modelos em Validação Cruzada"), dbc.Row(cards, className="mb-4"), dcc.Graph(figure=fig_r2)])
+# <<< ALTERAÇÃO AQUI: Função atualizada para incluir R² de Treino e Teste >>>
+# ✅✅✅ FUNÇÃO DINÂMICA - BUSCA MÉTRICAS DA API! ✅✅✅
+def get_performance_layout(headers):
+    """
+    Busca as métricas de performance dos modelos via API.
+    NÃO usa valores hardcoded - tudo vem do backend!
+    """
+    try:
+        response = requests.get(f"{BACKEND_URL}/model_performance", headers=headers)
+        
+        if response.status_code != 200:
+            error_msg = response.json().get('detail', 'Erro desconhecido')
+            return dbc.Alert([
+                html.H4("❌ Erro ao Carregar Métricas", className="alert-heading"),
+                html.P(f"Não foi possível carregar as métricas do backend: {error_msg}"),
+                html.Hr(),
+                html.P([
+                    "💡 ", html.B("Solução:"), " Execute os scripts de treinamento (r1hibrido.py, r2.py, r3.py) "
+                    "para gerar os arquivos metrics_*.json em ml_artifacts/"
+                ])
+            ], color="danger")
+        
+        metrics_data = response.json()
+        
+        # Verificar se as métricas existem
+        if not metrics_data or all(v is None for v in metrics_data.values()):
+            return dbc.Alert([
+                html.H4("⚠️ Métricas Não Encontradas", className="alert-heading"),
+                html.P("Os arquivos de métricas ainda não foram gerados."),
+                html.Hr(),
+                html.P([
+                    "🔧 ", html.B("Como resolver:"), html.Br(),
+                    "1. Execute: python r1hibrido.py", html.Br(),
+                    "2. Execute: python r2.py", html.Br(),
+                    "3. Execute: python r3.py", html.Br(),
+                    "4. Reinicie o backend", html.Br(),
+                    "5. Recarregue esta página"
+                ])
+            ], color="warning")
+        
+        # Criar cards com as métricas retornadas pela API
+        cards = []
+        for target_name, metrics in metrics_data.items():
+            if metrics is None:
+                continue
+                
+            # Destacar o melhor modelo
+            card_color = "success" if target_name == 'R1 (Performance)' else "light"
+            
+            cards.append(
+                dbc.Col(dbc.Card([
+                    dbc.CardHeader(f"🎯 {target_name}", style={'fontWeight': 'bold'}),
+                    dbc.CardBody([
+                        html.H6("📊 Desempenho Treino/Teste:", className="text-primary font-weight-bold"),
+                        html.P(f"• R² Treino: {metrics['r2_train']:.4f}", style={'marginLeft': '10px'}),
+                        html.P(f"• R² Teste: {metrics['r2_test']:.4f} ⭐", className="font-weight-bold", style={'marginLeft': '10px'}),
+                        html.P(f"• Overfitting: {metrics['overfitting_pct']:.1f}%", style={'marginLeft': '10px'}),
+                        
+                        html.Hr(),
+                        
+                        html.H6("🎯 Validação LOO-CV (mais confiável):", className="text-success font-weight-bold"),
+                        html.P(f"• R² LOO-CV: {metrics['r2_loo_cv']:.4f} 🏆", className="font-weight-bold", style={'marginLeft': '10px'}),
+                        
+                        html.Hr(),
+                        
+                        html.H6("📏 Métricas de Erro:", className="text-info font-weight-bold"),
+                        html.P(f"• MAE Teste: {metrics['mae_test']:.2f} (±{metrics['mae_test']:.1f} pontos)", style={'marginLeft': '10px'}),
+                        html.P(f"• MAE LOO-CV: {metrics['mae_loo']:.2f}", style={'marginLeft': '10px'}),
+                        html.P(f"• RMSE Teste: {metrics['rmse_test']:.2f}", style={'marginLeft': '10px'}),
+                        html.P(f"• RMSE LOO-CV: {metrics['rmse_loo']:.2f}", style={'marginLeft': '10px'}),
+                        
+                        html.Hr(),
+                        html.P(f"• Features Utilizadas: {metrics['n_features']}", className="text-muted"),
+                        html.P(f"• Ensemble: {'Sim (3 modelos)' if metrics.get('ensemble_size', 1) > 1 else 'Não'}", className="text-muted")
+                    ])
+                ], color=card_color, outline=True if card_color == "light" else False))
+            )
+        
+        # Preparar dados para gráficos
+        df_metrics = []
+        for target_name, metrics in metrics_data.items():
+            if metrics:
+                df_metrics.append({
+                    'Target': target_name,
+                    'R² Treino': metrics['r2_train'],
+                    'R² Teste': metrics['r2_test'],
+                    'R² LOO-CV': metrics['r2_loo_cv'],
+                    'MAE Teste': metrics['mae_test'],
+                    'RMSE Teste': metrics['rmse_test']
+                })
+        
+        df = pd.DataFrame(df_metrics)
+        
+        # Gráfico de R² comparativo
+        df_r2_melted = df.melt(id_vars='Target', value_vars=['R² Treino', 'R² Teste', 'R² LOO-CV'], 
+                              var_name='Tipo de Validação', value_name='R²')
+        
+        fig_r2 = px.bar(df_r2_melted, x='Target', y='R²', color='Tipo de Validação', barmode='group',
+                        title="Comparação de R² por Tipo de Validação (Valores Dinâmicos da API) ✅",
+                        labels={'R²': 'R² (Coeficiente de Determinação)', 'Target': 'Modelo Alvo'},
+                        text_auto='.4f',
+                        color_discrete_map={'R² Treino': '#95a5a6', 'R² Teste': '#3498db', 'R² LOO-CV': '#2ecc71'})
+        fig_r2.update_traces(textposition='outside')
+        fig_r2.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+        fig_r2.add_hline(y=0.5, line_dash="dash", line_color="red", 
+                         annotation_text="R² = 0.5 (50% da variância explicada)")
+        
+        # Gráfico de erros
+        df_errors_melted = df.melt(id_vars='Target', value_vars=['MAE Teste', 'RMSE Teste'], 
+                                   var_name='Métrica', value_name='Valor do Erro')
+        
+        fig_errors = px.bar(df_errors_melted, x='Target', y='Valor do Erro', color='Métrica', barmode='group',
+                            title="Comparativo de Erro Médio (MAE vs RMSE) - Valores Dinâmicos da API ✅",
+                            labels={'Valor do Erro': 'Magnitude do Erro (em pontos)', 'Target': 'Modelo Alvo'},
+                            text_auto='.2f',
+                            color_discrete_map={'MAE Teste': '#3498db', 'RMSE Teste': '#e74c3c'})
+        fig_errors.update_traces(textposition='outside')
+        fig_errors.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+        
+        return html.Div([
+            dbc.Alert([
+                html.H4("✅ Métricas Carregadas Dinamicamente!", className="alert-heading"),
+                html.P("Os valores exibidos são buscados em tempo real da API do backend."),
+                html.Hr(),
+                html.P([
+                    "📌 ", html.B("R² Treino/Teste:"), " Validação tradicional (split 75/25)", html.Br(),
+                    "🏆 ", html.B("R² LOO-CV:"), " Validação cruzada Leave-One-Out (mais confiável para datasets pequenos)", html.Br(),
+                    "📏 ", html.B("MAE:"), " Erro médio absoluto (fácil de interpretar)", html.Br(),
+                    "📏 ", html.B("RMSE:"), " Penaliza mais os erros grandes (útil para detectar outliers)"
+                ])
+            ], color="success", className="mb-4"),
+            
+            html.H3("Performance Final dos Modelos (Validações Completas)", className="mb-3"),
+            dbc.Row(cards, className="mb-4"),
+            
+            dcc.Graph(figure=fig_r2, className="mb-4"),
+            dcc.Graph(figure=fig_errors)
+        ])
+        
+    except requests.exceptions.RequestException as e:
+        return dbc.Alert([
+            html.H4("❌ Erro de Conexão", className="alert-heading"),
+            html.P(f"Não foi possível conectar ao backend: {e}"),
+            html.Hr(),
+            html.P("Verifique se o backend está rodando em " + BACKEND_URL)
+        ], color="danger")
+    except Exception as e:
+        return dbc.Alert([
+            html.H4("❌ Erro Inesperado", className="alert-heading"),
+            html.P(f"Ocorreu um erro ao processar as métricas: {e}"),
+            html.Hr(),
+            html.P("Contate o administrador do sistema.")
+        ], color="danger")
+
 
 def get_history_layout(headers):
     try:
@@ -159,10 +306,7 @@ def get_feature_importance_layout(headers):
 # =============================================================================
 @app.callback(Output('page-content', 'children'), [Input('session-store', 'data')])
 def render_page_content(data):
-    # Como 'logged_in' é sempre True, sempre renderiza o dashboard principal.
     return main_dashboard_layout
-
-# Os callbacks handle_auth e handle_logout foram removidos.
 
 @app.callback(
     [Output('upload-data-store', 'data'), Output('upload-status', 'children'), Output('predict-button', 'disabled')],
@@ -184,7 +328,6 @@ def handle_upload(contents, filename):
 def run_api_calls(n_clicks, session_data, upload_data):
     if not n_clicks or not upload_data or not session_data: raise PreventUpdate
     
-    # O token é 'default_token', mas ainda o enviamos para manter a lógica do backend simples
     headers = {'Authorization': f'Bearer {session_data["token"]}'}
     files = {'file': (upload_data['filename'], base64.b64decode(upload_data['contents']), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}
     
@@ -246,7 +389,7 @@ def update_lazy_tabs(active_tab, session_data):
     
     if active_tab == 'history-tab': return get_history_layout(headers), dash.no_update, dash.no_update
     if active_tab == 'analysis-tab': return dash.no_update, get_feature_importance_layout(headers), dash.no_update
-    if active_tab == 'performance-tab': return dash.no_update, dash.no_update, render_performance_results()
+    if active_tab == 'performance-tab': return dash.no_update, dash.no_update, get_performance_layout(headers)  # ✅ AGORA DINÂMICO!
     
     raise PreventUpdate
 
@@ -273,7 +416,7 @@ def update_shap_graphs(selected_player, session_data):
     for target_key, data in player_shap.items():
         df_shap = pd.DataFrame({'feature': data['feature_names'], 'shap_value': data['shap_values']}).sort_values(by='shap_value', key=abs, ascending=False).head(15)
         fig = px.bar(df_shap, x='shap_value', y='feature', orientation='h', title=f"Contribuições (SHAP) para {target_key}", labels={'shap_value': 'Impacto', 'feature': 'Feature'})
-        fig.update_layout(yaxis={'categoryorder': 'total ascending'}); graphs.append(dcc.Graph(figure=fig))
+        fig.update_layout(yaxis={'categoryorder':'total ascending'}); graphs.append(dcc.Graph(figure=fig))
     return html.Div([kpis] + graphs)
 
 # =============================================================================
