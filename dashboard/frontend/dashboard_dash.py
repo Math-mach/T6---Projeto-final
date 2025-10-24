@@ -1,4 +1,4 @@
-# dashboard/frontend/dashboard_dash.py (VERSÃO FINAL ATUALIZADA - SEM AUTENTICAÇÃO)
+# dashboard/frontend/dashboard_dash.py (VERSÃO FINAL ATUALIZADA - COM SUPORTE A CSV)
 
 import dash
 from dash import dcc, html, dash_table
@@ -47,8 +47,22 @@ main_dashboard_layout = dbc.Container([
     ], className="mb-4 align-items-center"),
     dbc.Tabs([
         dbc.Tab(label="📊 Nova Previsão", tab_id="predict-tab", children=[
-            dcc.Upload(id='upload-data', children=html.Div(['Arraste e solte ou ', html.A('Selecione um Arquivo Excel (.xlsx)')]),
-                style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '20px 0'}, multiple=False),
+            # >>> ALTERAÇÃO: TEXTO ATUALIZADO PARA ACEITAR .CSV E .XLSX <<<
+            dcc.Upload(
+                id='upload-data', 
+                children=html.Div(['Arraste e solte ou ', html.A('Selecione um Arquivo (.xlsx ou .csv)')]),
+                style={
+                    'width': '100%', 
+                    'height': '60px', 
+                    'lineHeight': '60px', 
+                    'borderWidth': '1px', 
+                    'borderStyle': 'dashed', 
+                    'borderRadius': '5px', 
+                    'textAlign': 'center', 
+                    'margin': '20px 0'
+                }, 
+                multiple=False
+            ),
             html.Div(id='upload-status', className="mb-3"),
             dbc.Button("Executar Análise Completa", id='predict-button', color='success', className="mb-4", disabled=True),
             dcc.Loading(type="default", children=[
@@ -121,8 +135,6 @@ def render_clustering_results(cluster_data):
         return html.Div([html.H3("Análise de Perfis (Clustering)"), dbc.Row(stats_cards, className="mb-4"), dcc.Graph(figure=fig_pca)])
     except Exception as e: return dbc.Alert(f"Erro ao renderizar os resultados do clustering: {e}", color="danger")
 
-# <<< ALTERAÇÃO AQUI: Função atualizada para incluir R² de Treino e Teste >>>
-# ✅✅✅ FUNÇÃO DINÂMICA - BUSCA MÉTRICAS DA API! ✅✅✅
 def get_performance_layout(headers):
     """
     Busca as métricas de performance dos modelos via API.
@@ -389,7 +401,7 @@ def update_lazy_tabs(active_tab, session_data):
     
     if active_tab == 'history-tab': return get_history_layout(headers), dash.no_update, dash.no_update
     if active_tab == 'analysis-tab': return dash.no_update, get_feature_importance_layout(headers), dash.no_update
-    if active_tab == 'performance-tab': return dash.no_update, dash.no_update, get_performance_layout(headers)  # ✅ AGORA DINÂMICO!
+    if active_tab == 'performance-tab': return dash.no_update, dash.no_update, get_performance_layout(headers)
     
     raise PreventUpdate
 

@@ -1,4 +1,4 @@
-# main.py (VERSÃO SEM AUTENTICAÇÃO PARA APRESENTAÇÃO
+# main.py (VERSÃO SEM AUTENTICAÇÃO PARA APRESENTAÇÃO - COM SUPORTE A CSV)
 import os
 import pickle
 import joblib
@@ -98,7 +98,6 @@ except Exception as e:
     MODELS = None
 
 # --- Funções de Pré-processamento e Auxiliares (sem alteração) ---
-# (As funções fix_duplicate_columns, safe_mean, preprocess_target1, etc. continuam aqui, sem mudanças)
 def fix_duplicate_columns(df):
     cols = pd.Series(df.columns)
     duplicated = cols[cols.duplicated()].unique()
@@ -109,14 +108,19 @@ def fix_duplicate_columns(df):
             for i, idx in enumerate(indices[1:], 1): cols.iloc[idx] = f"{dup}_v{i+1}"
         df.columns = cols
     return df
+
 def safe_mean(df, columns, axis=1):
     valid_cols = [col for col in columns if col in df.columns]; return df[valid_cols].mean(axis=axis) if valid_cols else pd.Series(0, index=df.index)
+
 def safe_std(df, columns, axis=1):
     valid_cols = [col for col in columns if col in df.columns]; return df[valid_cols].std(axis=axis) if valid_cols else pd.Series(0, index=df.index)
+
 def safe_min(df, columns, axis=1):
     valid_cols = [col for col in columns if col in df.columns]; return df[valid_cols].min(axis=axis) if valid_cols else pd.Series(0, index=df.index)
+
 def safe_max(df, columns, axis=1):
     valid_cols = [col for col in columns if col in df.columns]; return df[valid_cols].max(axis=axis) if valid_cols else pd.Series(0, index=df.index)
+
 def preprocess_target1(df_input):
     df = fix_duplicate_columns(df_input.copy())
     if 'F0103' in df.columns: df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
@@ -155,6 +159,7 @@ def preprocess_target1(df_input):
         for f2 in top3[i+1:]:
             interaction_name = f'{f1}_X_{f2}'; df[interaction_name] = df[f1] * df[f2] if f1 in df.columns and f2 in df.columns else 0
     return SCALERS['target1'].transform(df.reindex(columns=FEATURES['target1'], fill_value=0))
+
 def preprocess_target2(df_input):
     df = fix_duplicate_columns(df_input.copy())
     if 'F0103' in df.columns: df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
@@ -177,6 +182,7 @@ def preprocess_target2(df_input):
         if interaction_name in FEATURES['target2']:
             df[interaction_name] = df[f1] * df[f2] if f1 in df.columns and f2 in df.columns else 0
     return SCALERS['target2'].transform(df.reindex(columns=FEATURES['target2'], fill_value=0))
+
 def preprocess_target3(df_input):
     df = fix_duplicate_columns(df_input.copy())
     if 'F0103' in df.columns: df['F0103'] = pd.to_numeric(df['F0103'].astype(str).str.replace(',', '.'), errors='coerce')
@@ -214,15 +220,37 @@ def health_check():
 
 # Endpoint /register e /login REMOVIDOS
 
-# Endpoint de Clustering MODIFICADO para não exigir autenticação real
+# ========== ALTERAÇÃO 1: ENDPOINT /clustering COM SUPORTE A CSV ==========
 @app.post("/clustering")
 async def get_clustering_analysis(file: UploadFile = File(...), user_id: str = Depends(get_default_user_id)):
-    # O resto da função continua exatamente o mesmo...
     if not CLUSTERING_MODELS:
         raise HTTPException(status_code=503, detail="Modelos de clustering não disponíveis.")
+    
     try:
         contents = await file.read()
-        df = pd.read_excel(BytesIO(contents))
+        buffer = BytesIO(contents)
+
+        # >>> INÍCIO DA ALTERAÇÃO - SUPORTE A CSV <<<
+        if file.filename.lower().endswith('.csv'):
+            # Tente diferentes configurações comuns de CSV
+            try:
+                df = pd.read_csv(buffer)
+            except:
+                buffer.seek(0)
+                try:
+                    df = pd.read_csv(buffer, sep=';', decimal=',')
+                except:
+                    buffer.seek(0)
+                    df = pd.read_csv(buffer, encoding='latin-1')
+        elif file.filename.lower().endswith('.xlsx'):
+            df = pd.read_excel(buffer)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Formato de arquivo não suportado. Use .csv ou .xlsx"
+            )
+        # >>> FIM DA ALTERAÇÃO <<<
+            
         df_original_para_previsao = df.copy()
         df = fix_duplicate_columns(df)
         p_cols = [c for c in df.columns if c.startswith('P') and any(char.isdigit() for char in c)]
@@ -260,64 +288,145 @@ async def get_clustering_analysis(file: UploadFile = File(...), user_id: str = D
                 "percentage": float(mask.sum() / len(clusters) * 100) if len(clusters) > 0 else 0.0,
                 "P_mean": safe_float(df.loc[mask, 'P_mean'].mean()) if 'P_mean' in df.columns else 0.0,
                 "Target1": safe_float(df.loc[mask, 'Previsão T1'].mean()),
-                "Target2": safe_float(df.loc[mask, 'Previsão T2'].mean()), "Target3": safe_float(df.loc[mask, 'Previsão T3'].mean())
+                "Target2": safe_float(df.loc[mask, 'Previsão T2'].mean()), 
+                "Target3": safe_float(df.loc[mask, 'Previsão T3'].mean())
             }
         jogadores = df_original_para_previsao['Código de Acesso'].tolist() if 'Código de Acesso' in df_original_para_previsao.columns else list(range(len(df)))
         counts = {str(i): float(np.sum(clusters == i) / len(clusters)) for i in np.unique(clusters)}
         return {"pca_coords": X_pca.tolist(), "clusters": clusters.tolist(), "jogadores": jogadores, "stats": stats, "counts": counts}
+    except HTTPException:
+        raise
     except Exception as e:
-        traceback.print_exc(); raise HTTPException(status_code=500, detail=f"Erro no clustering: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erro no clustering: {e}")
 
-# Endpoint /predict MODIFICADO para não exigir autenticação real
+# ========== ALTERAÇÃO 2: ENDPOINT /predict COM SUPORTE A CSV ==========
 @app.post("/predict")
 async def predict(file: UploadFile = File(...), user_id: str = Depends(get_default_user_id), db: Session = Depends(database.get_db)):
-    # O resto da função continua exatamente o mesmo...
-    if MODELS is None: raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Modelos de ML não estão disponíveis.")
+    if MODELS is None: 
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Modelos de ML não estão disponíveis.")
+    
     try:
-        contents = await file.read(); buffer = BytesIO(contents); df_new = pd.read_excel(buffer)
+        contents = await file.read()
+        buffer = BytesIO(contents)
+
+        # >>> INÍCIO DA ALTERAÇÃO - SUPORTE A CSV <<<
+        if file.filename.lower().endswith('.csv'):
+            # Tente diferentes configurações comuns de CSV
+            try:
+                df_new = pd.read_csv(buffer)
+            except:
+                buffer.seek(0)
+                try:
+                    df_new = pd.read_csv(buffer, sep=';', decimal=',')
+                except:
+                    buffer.seek(0)
+                    df_new = pd.read_csv(buffer, encoding='latin-1')
+        elif file.filename.lower().endswith('.xlsx'):
+            df_new = pd.read_excel(buffer)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Formato de arquivo não suportado. Use .csv ou .xlsx"
+            )
+        # >>> FIM DA ALTERAÇÃO <<<
+            
         df_new = fix_duplicate_columns(df_new)
-        if 'Código de Acesso' not in df_new.columns: raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coluna 'Código de Acesso' não encontrada.")
-    except Exception as e: raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao ler o arquivo Excel: {e}")
-    df_results = df_new.copy(); shap_data = {}
+        if 'Código de Acesso' not in df_new.columns: 
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Coluna 'Código de Acesso' não encontrada.")
+    except HTTPException:
+        raise
+    except Exception as e: 
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao ler ou processar o arquivo: {e}")
+    
+    df_results = df_new.copy()
+    shap_data = {}
+    
     try:
-        X_scaled_t1 = preprocess_target1(df_new.copy()); df_results['Previsão T1'] = MODELS['target1'].predict(X_scaled_t1).round(2)
-        X_scaled_t2 = preprocess_target2(df_new.copy()); df_results['Previsão T2'] = np.mean([model.predict(X_scaled_t2) for model in MODELS['target2']], axis=0).round(2)
-        X_scaled_t3 = preprocess_target3(df_new.copy()); df_results['Previsão T3'] = np.mean([model.predict(X_scaled_t3) for model in MODELS['target3']], axis=0).round(2)
+        X_scaled_t1 = preprocess_target1(df_new.copy())
+        df_results['Previsão T1'] = MODELS['target1'].predict(X_scaled_t1).round(2)
+        
+        X_scaled_t2 = preprocess_target2(df_new.copy())
+        df_results['Previsão T2'] = np.mean([model.predict(X_scaled_t2) for model in MODELS['target2']], axis=0).round(2)
+        
+        X_scaled_t3 = preprocess_target3(df_new.copy())
+        df_results['Previsão T3'] = np.mean([model.predict(X_scaled_t3) for model in MODELS['target3']], axis=0).round(2)
+        
         shap_values_t1 = EXPLAINERS['target1'].shap_values(X_scaled_t1)
         shap_values_t2 = np.mean([explainer.shap_values(X_scaled_t2) for explainer in EXPLAINERS['target2']], axis=0)
         shap_values_t3 = np.mean([explainer.shap_values(X_scaled_t3) for explainer in EXPLAINERS['target3']], axis=0)
+        
         for i, j_id in enumerate(df_results['Código de Acesso']):
-            shap_data[str(j_id)] = {'T1': {'shap_values': shap_values_t1[i].tolist(), 'feature_names': FEATURES['target1']},'T2': {'shap_values': shap_values_t2[i].tolist(), 'feature_names': FEATURES['target2']},'T3': {'shap_values': shap_values_t3[i].tolist(), 'feature_names': FEATURES['target3']}}
-    except Exception as e: raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro no pipeline de previsão: {e}")
+            shap_data[str(j_id)] = {
+                'T1': {'shap_values': shap_values_t1[i].tolist(), 'feature_names': FEATURES['target1']},
+                'T2': {'shap_values': shap_values_t2[i].tolist(), 'feature_names': FEATURES['target2']},
+                'T3': {'shap_values': shap_values_t3[i].tolist(), 'feature_names': FEATURES['target3']}
+            }
+    except Exception as e: 
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro no pipeline de previsão: {e}")
+    
     try:
-        for _, row in df_results.iterrows(): db.add(models.Prediction(user_id=int(user_id), jogador_id=str(row['Código de Acesso']), pred_t1=row['Previsão T1'], pred_t2=row['Previsão T2'], pred_t3=row['Previsão T3']))
+        for _, row in df_results.iterrows(): 
+            db.add(models.Prediction(
+                user_id=int(user_id), 
+                jogador_id=str(row['Código de Acesso']), 
+                pred_t1=row['Previsão T1'], 
+                pred_t2=row['Previsão T2'], 
+                pred_t3=row['Previsão T3']
+            ))
         db.commit()
-    except Exception as e: db.rollback(); raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao salvar previsão no banco de dados: {e}")
-    return {"predictions": df_results[['Código de Acesso', 'Previsão T1', 'Previsão T2', 'Previsão T3']].to_dict('records'), "shap_data": shap_data}
+    except Exception as e: 
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao salvar previsão no banco de dados: {e}")
+    
+    return {
+        "predictions": df_results[['Código de Acesso', 'Previsão T1', 'Previsão T2', 'Previsão T3']].to_dict('records'), 
+        "shap_data": shap_data
+    }
 
-# Endpoint /history MODIFICADO para não exigir autenticação real
+# Endpoint /history (sem alteração)
 @app.get("/history")
 def get_history(user_id: str = Depends(get_default_user_id), db: Session = Depends(database.get_db)):
-    query = db.query(models.Prediction.upload_timestamp, func.count(models.Prediction.id).label('num_jogadores')).filter(models.Prediction.user_id == int(user_id)).group_by(models.Prediction.upload_timestamp).order_by(models.Prediction.upload_timestamp.desc()).all()
+    query = db.query(
+        models.Prediction.upload_timestamp, 
+        func.count(models.Prediction.id).label('num_jogadores')
+    ).filter(
+        models.Prediction.user_id == int(user_id)
+    ).group_by(
+        models.Prediction.upload_timestamp
+    ).order_by(
+        models.Prediction.upload_timestamp.desc()
+    ).all()
     return [{"timestamp": r.upload_timestamp.strftime("%Y-%m-%d %H:%M:%S"), "num_jogadores": r.num_jogadores} for r in query]
 
-# Endpoint /feature_importance MODIFICADO para não exigir autenticação real
+# Endpoint /feature_importance (sem alteração)
 @app.get("/feature_importance")
 def get_feature_importance(user_id: str = Depends(get_default_user_id)):
-    if MODELS is None: raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Modelos de ML não carregados.")
+    if MODELS is None: 
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Modelos de ML não carregados.")
+    
     importances_data = {}
     try:
         if hasattr(MODELS['target1'], 'feature_importances_'):
-            df_imp_t1 = pd.DataFrame({'feature': FEATURES['target1'], 'importance': MODELS['target1'].feature_importances_}).sort_values(by='importance', ascending=False).head(20)
+            df_imp_t1 = pd.DataFrame({
+                'feature': FEATURES['target1'], 
+                'importance': MODELS['target1'].feature_importances_
+            }).sort_values(by='importance', ascending=False).head(20)
             importances_data['Target1'] = df_imp_t1.to_dict('records')
+        
         for target_key, target_name in [('target2', 'Target2'), ('target3', 'Target3')]:
             if all_importances := [model.feature_importances_ for model in MODELS[target_key] if hasattr(model, 'feature_importances_')]:
-                df_imp = pd.DataFrame({'feature': FEATURES[target_key], 'importance': np.mean(all_importances, axis=0)}).sort_values(by='importance', ascending=False).head(20)
+                df_imp = pd.DataFrame({
+                    'feature': FEATURES[target_key], 
+                    'importance': np.mean(all_importances, axis=0)
+                }).sort_values(by='importance', ascending=False).head(20)
                 importances_data[target_name] = df_imp.to_dict('records')
+        
         return importances_data
-    except Exception as e: raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao calcular feature importance: {e}")
+    except Exception as e: 
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao calcular feature importance: {e}")
 
-# ⭐ NOVO: Endpoint /model_performance - Retorna métricas dos modelos
+# ⭐ Endpoint /model_performance (sem alteração)
 @app.get("/model_performance")
 def get_model_performance(user_id: str = Depends(get_default_user_id)):
     """
