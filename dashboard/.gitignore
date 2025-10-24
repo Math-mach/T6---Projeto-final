@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+
+# Notebooks
+.ipynb_checkpoints
+
+# Docker
+.dockerignore
+/db_data/
+!db_data/.gitkeep
+
+# Artefatos ML
+*.pkl
+*.joblib
+
+# Streamlit
+.streamlit/

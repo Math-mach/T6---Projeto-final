@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # 1. SERVIÇO DO BANCO DE DADOS (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - daruma_net
+
+  # 2. SERVIÇO DA API (Flask/FastAPI)
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      # Variáveis de ambiente para o Flask se conectar ao DB
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+    depends_on:
+      - db
+    networks:
+      - daruma_net
+
+  # 3. SERVIÇO DO DASHBOARD (PLOTLY DASH)
+  frontend:
+    build:
+      context: ./frontend  # Assumindo que o Dockerfile e o código estão em uma pasta 'frontend'
+    restart: always
+    environment:
+      # Variável para o Dash saber onde está o Backend
+      BACKEND_URL: http://backend:5000
+    depends_on:
+      - backend
+    ports:
+      # CORREÇÃO: Mapeando a porta padrão do Dash (8050)
+      - "127.0.0.1:8050:8050"
+    networks:
+      - daruma_net
+
+networks:
+  daruma_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
