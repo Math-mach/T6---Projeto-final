@@ -47,7 +47,6 @@ main_dashboard_layout = dbc.Container([
     ], className="mb-4 align-items-center"),
     dbc.Tabs([
         dbc.Tab(label="📊 Nova Previsão", tab_id="predict-tab", children=[
-            # >>> ALTERAÇÃO: TEXTO ATUALIZADO PARA ACEITAR .CSV E .XLSX <<<
             dcc.Upload(
                 id='upload-data', 
                 children=html.Div(['Arraste e solte ou ', html.A('Selecione um Arquivo (.xlsx ou .csv)')]),
@@ -74,7 +73,6 @@ main_dashboard_layout = dbc.Container([
         dbc.Tab(label="🧬 Análise de Perfis", tab_id="clustering-tab", children=[dcc.Loading(html.Div(id='clustering-output', className="mt-3"))]),
         dbc.Tab(label="🔬 Performance do Modelo", tab_id="performance-tab", children=[html.Div(id='performance-output', className="mt-3")]),
         dbc.Tab(label="🧠 Análise de Features", tab_id="analysis-tab", children=[dcc.Loading(html.Div(id='feature-importance-output'))]),
-        dbc.Tab(label="⏳ Histórico", tab_id="history-tab", children=[dcc.Loading(html.Div(id='history-output'))]),
     ], id="tabs", active_tab="predict-tab"),
 ], fluid=True)
 
@@ -186,27 +184,27 @@ def get_performance_layout(headers):
                 dbc.Col(dbc.Card([
                     dbc.CardHeader(f"🎯 {target_name}", style={'fontWeight': 'bold'}),
                     dbc.CardBody([
-                        html.H6("📊 Desempenho Treino/Teste:", className="text-primary font-weight-bold"),
+                        html.H6("📊 Desempenho Treino/Teste:", style={'fontWeight': 'bold'}),
                         html.P(f"• R² Treino: {metrics['r2_train']:.4f}", style={'marginLeft': '10px'}),
-                        html.P(f"• R² Teste: {metrics['r2_test']:.4f} ⭐", className="font-weight-bold", style={'marginLeft': '10px'}),
+                        html.P(f"• R² Teste: {metrics['r2_test']:.4f} ⭐", style={'marginLeft': '10px', 'fontWeight': 'bold'}),
                         html.P(f"• Overfitting: {metrics['overfitting_pct']:.1f}%", style={'marginLeft': '10px'}),
                         
                         html.Hr(),
                         
-                        html.H6("🎯 Validação LOO-CV (mais confiável):", className="text-success font-weight-bold"),
-                        html.P(f"• R² LOO-CV: {metrics['r2_loo_cv']:.4f} 🏆", className="font-weight-bold", style={'marginLeft': '10px'}),
+                        html.H6("🎯 Validação LOO-CV (mais confiável):", style={'fontWeight': 'bold'}),
+                        html.P(f"• R² LOO-CV: {metrics['r2_loo_cv']:.4f} 🏆", style={'marginLeft': '10px', 'fontWeight': 'bold'}),
                         
                         html.Hr(),
                         
-                        html.H6("📏 Métricas de Erro:", className="text-info font-weight-bold"),
+                        html.H6("📏 Métricas de Erro:", style={'fontWeight': 'bold'}),
                         html.P(f"• MAE Teste: {metrics['mae_test']:.2f} (±{metrics['mae_test']:.1f} pontos)", style={'marginLeft': '10px'}),
                         html.P(f"• MAE LOO-CV: {metrics['mae_loo']:.2f}", style={'marginLeft': '10px'}),
                         html.P(f"• RMSE Teste: {metrics['rmse_test']:.2f}", style={'marginLeft': '10px'}),
                         html.P(f"• RMSE LOO-CV: {metrics['rmse_loo']:.2f}", style={'marginLeft': '10px'}),
                         
                         html.Hr(),
-                        html.P(f"• Features Utilizadas: {metrics['n_features']}", className="text-muted"),
-                        html.P(f"• Ensemble: {'Sim (3 modelos)' if metrics.get('ensemble_size', 1) > 1 else 'Não'}", className="text-muted")
+                        html.P(f"• Features Utilizadas: {metrics['n_features']}", style={'color': 'black'}),
+                        html.P(f"• Ensemble: {'Sim (3 modelos)' if metrics.get('ensemble_size', 1) > 1 else 'Não'}", style={'color': 'black'})
                     ])
                 ], color=card_color, outline=True if card_color == "light" else False))
             )
@@ -287,17 +285,6 @@ def get_performance_layout(headers):
             html.P("Contate o administrador do sistema.")
         ], color="danger")
 
-
-def get_history_layout(headers):
-    try:
-        response = requests.get(f"{BACKEND_URL}/history", headers=headers)
-        if response.status_code == 200:
-            history_data = response.json()
-            if not history_data: return dbc.Alert("Nenhum histórico encontrado.", color="info")
-            df_history = pd.DataFrame(history_data)
-            return dash_table.DataTable(columns=[{'name': 'Data do Upload', 'id': 'timestamp'}, {'name': 'Nº de Jogadores', 'id': 'num_jogadores'}], data=df_history.to_dict('records'), sort_action="native")
-        return dbc.Alert(f"Erro ao buscar histórico: {response.json().get('detail')}", color="danger")
-    except requests.exceptions.RequestException as e: return dbc.Alert(f"Erro de conexão: {e}", color="danger")
 
 def get_feature_importance_layout(headers):
     try:
@@ -393,15 +380,14 @@ def update_clustering_tab(cluster_data):
     return render_clustering_results(cluster_data)
 
 @app.callback(
-    [Output('history-output', 'children'), Output('feature-importance-output', 'children'), Output('performance-output', 'children')],
+    [Output('feature-importance-output', 'children'), Output('performance-output', 'children')],
     Input('tabs', 'active_tab'), State('session-store', 'data'))
 def update_lazy_tabs(active_tab, session_data):
     if not session_data.get('token'): raise PreventUpdate
     headers = {'Authorization': f'Bearer {session_data["token"]}'}
     
-    if active_tab == 'history-tab': return get_history_layout(headers), dash.no_update, dash.no_update
-    if active_tab == 'analysis-tab': return dash.no_update, get_feature_importance_layout(headers), dash.no_update
-    if active_tab == 'performance-tab': return dash.no_update, dash.no_update, get_performance_layout(headers)
+    if active_tab == 'analysis-tab': return get_feature_importance_layout(headers), dash.no_update
+    if active_tab == 'performance-tab': return dash.no_update, get_performance_layout(headers)
     
     raise PreventUpdate
 
