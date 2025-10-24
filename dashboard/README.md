@@ -51,12 +51,13 @@ cd backend
 pip install -r requirements.txt
 
 # Certifique-se que o excel para treinamento 'JogadoresV1.xlsx' esteja na mesma pasta e Execute os scripts de treinamento para gerar os artefatos
-python export_artifacts_target1.py
-python export_artifacts_target2.py
-python export_artifacts_target3.py
+python export_artifacts_cluster.py
+python export_hibrido_target1.py
+python export_hibrido_target2.py
+python export_hibrido_target3.py
 
 ## Funcionamento
-Cada script `export_artifacts_target<N>.py` é um pipeline completo para um dos três targets. O processo geral inclui:
+Cada script `export_hibrido_target<N>.py` é um pipeline completo para um dos três targets. O processo geral inclui:
 
 1.  **Carregamento e Limpeza:** Os dados do arquivo `JogadoresV1.xlsx` são carregados. Valores ausentes são tratados (imputação por mediana) e tipos de dados são corrigidos.
 2.  **Engenharia de Features:** Novas features são criadas a partir das existentes (médias, interações, features polinomiais) para aumentar o poder preditivo do modelo.
